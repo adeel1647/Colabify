@@ -2,10 +2,8 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system'; // Required for converting image to form data
-import { API_URL } from '@/config';
 
-const ChangeCoverPhotoModal = ({ visible, onClose, userId }) => {
+const ChnageProfilePhotoModal = ({ visible, onClose }) => {
   
   // Function to open the camera
   const openCamera = async () => {
@@ -17,8 +15,7 @@ const ChangeCoverPhotoModal = ({ visible, onClose, userId }) => {
     const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 1 });
     if (!result.canceled) {
       console.log("Photo Taken:", result.assets[0].uri);
-      const uri = result.assets[0].uri;
-      await uploadImage(uri);
+      // Handle the taken photo (e.g., upload it)
     }
   };
 
@@ -32,46 +29,7 @@ const ChangeCoverPhotoModal = ({ visible, onClose, userId }) => {
     const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 1 });
     if (!result.canceled) {
       console.log("Photo Selected:", result.assets[0].uri);
-      const uri = result.assets[0].uri;
-      await uploadImage(uri);
-    }
-  };
-
-  // Function to upload the image to the server
-  const uploadImage = async (uri) => {
-    try {
-      const formData = new FormData();
-      const fileInfo = await FileSystem.getInfoAsync(uri);
-      
-      // Prepare file to be uploaded
-      const file = {
-        uri: fileInfo.uri,
-        name: fileInfo.uri.split('/').pop(),
-        type: 'image/jpeg', // or the appropriate file type
-      };
-      
-      formData.append('coverPic', file);
-
-      // Send the request using fetch
-      const response = await fetch(`${API_URL}/api/users/${userId}/cover`, {
-        method: 'PUT',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Success', 'Cover photo updated successfully!');
-        console.log(data);
-      } else {
-        Alert.alert('Error', data.message || 'Failed to update cover photo');
-      }
-    } catch (error) { 
-      Alert.alert('Error', 'Failed to update cover photo');
-      console.error(error);
+      // Handle the selected photo (e.g., upload it)
     }
   };
 
@@ -100,7 +58,7 @@ const ChangeCoverPhotoModal = ({ visible, onClose, userId }) => {
                 <View style={[styles.iconContainer, { backgroundColor: 'lightgray' }]}>
                   <Ionicons name="image-outline" size={20} color="black" />
                 </View>
-                <Text style={styles.optionText}>Upload Cover Photo</Text>
+                <Text style={styles.optionText}>Upload Photo</Text>
               </TouchableOpacity>
              
               {/* See Cover Photo (No Action) */}
@@ -108,7 +66,7 @@ const ChangeCoverPhotoModal = ({ visible, onClose, userId }) => {
                 <View style={[styles.iconContainer, { backgroundColor: 'lightgray' }]}>
                   <Ionicons name="eye-outline" size={20} color="black" />
                 </View>
-                <Text style={styles.optionText}>See Cover Photo</Text>
+                <Text style={styles.optionText}>See Profie Photo</Text>
               </TouchableOpacity>
 
             </View>
@@ -160,4 +118,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChangeCoverPhotoModal;
+export default ChnageProfilePhotoModal;

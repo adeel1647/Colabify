@@ -1,27 +1,64 @@
-import React, { useState } from 'react';
-import { View, TextInput, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
-import {Link, router } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/config';
 
 const Header = () => {
-  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          console.log(parsedUser.name);       // ➔ "Adeel Ahmed"
+          console.log(parsedUser.token);      // ➔ JWT token
+          console.log(parsedUser.profilePic); // ➔ Profile pic filename
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('userData');
+      console.log('User data removed');
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to remove user data:', error);
+      Alert.alert('Error', 'An error occurred during logout');
+    }
   };
 
+  const profileImageSource = user?.profilePic
+    ? { uri: `${API_URL}/uploads/${user.profilePic}` }
+    : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' };
+    
+
   return (
-    <>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => router.push('/myProfile')}>
-          <Image source={require('../assets/images/my-profile-image.jpg')} style={styles.profileImage} />
-        </TouchableOpacity>
-        <TextInput style={styles.searchBar} placeholder="Search" />
-        <TouchableOpacity style={styles.messageIcon} onPress={() => router.push('/')}>
-          <Ionicons name="log-out-outline" size={22.5} color="grey" />
-        </TouchableOpacity>
-      </View>
-    </>
+    <View style={styles.headerContainer}>
+      <TouchableOpacity onPress={() => router.push('/myProfile')}>
+      <Image
+  source={profileImageSource}
+  style={{ width: 50, height: 50, borderRadius: 25 }}
+  onError={(e) => console.error('Image loading error:', e.nativeEvent.error)}
+/>
+
+      </TouchableOpacity>
+      <TextInput style={styles.searchBar} placeholder="Search" />
+      <TouchableOpacity style={styles.messageIcon} onPress={handleLogout}>
+        <Ionicons name="log-out-outline" size={22.5} color="grey" />
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -33,7 +70,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
-    marginTop: 30,
   },
   profileImage: {
     width: 45,

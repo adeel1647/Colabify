@@ -86,13 +86,13 @@ const Header: React.FC<HeaderProps> = ({ profileImage, smallText, onPendingPress
     <View style={styles.headerContainer}>
       <Image source={profileImage} style={styles.profileImage} />
       <Text style={styles.smallText}>{smallText}</Text>
-      <TouchableOpacity onPress={onPendingPress} style={styles.iconButton}>
+      {/* <TouchableOpacity onPress={onPendingPress} style={styles.iconButton}>
         <FontAwesome name="clock-o" size={24} color="#c7c7c7" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       {/* <TouchableOpacity onPress={onPostPress} style={styles.iconButton}>
         <FontAwesome name="send" size={24} color="black" />
       </TouchableOpacity> */}
-      <TouchableOpacity style={styles.postButton}>
+      <TouchableOpacity style={styles.postButton} onPress={onPostPress}>
               <Text style={styles.postButtonText}>   Post   </Text>
             </TouchableOpacity>
     </View>
@@ -116,12 +116,14 @@ const styles = StyleSheet.create({
   },
   postButton: {
     padding: 5,
-    backgroundColor: '#e8e8e8',
+    backgroundColor: '#FF8B04',
     borderRadius: 15,
     marginLeft: 15,
   },
   postButtonText: {
-    color: '#424242',
+    color: 'white',
+    fontSize: 20,
+
   },
   smallText: {
     flex: 1,

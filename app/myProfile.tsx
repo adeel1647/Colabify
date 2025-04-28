@@ -1,14 +1,142 @@
-import React, {useState} from 'react';
-import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
-import { FontAwesome, Entypo, Ionicons } from '@expo/vector-icons';
+import React, {useEffect, useState} from 'react';
+import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert } from 'react-native';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import GroupOptionsModal from './groupcreation/Modal/GroupOptionsModal';
-import ChangeCoverPhotoModal from './groupcreation/Modal/ChnageCoverPhotoModal';
 import Post from '@/components/GroupPost';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/config';
+import ChnageProfilePhotoModal from './groupcreation/Modal/ChnageProfilePhotoModal';
+import ChangeCoverPhotoModal from './groupcreation/Modal/ChnageCoverPhotoModal';
+
+interface PostData {
+  _id: string;
+  caption: string;
+  images: string[];
+  createdAt: string;
+  likes:string[];
+  shares:string[];
+  comments:string[];
+  userId: {
+    _id: string;
+    email: string;
+  };
+}
 
 const MyProfile: React.FC = () => {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState<any[]>([]);
+
   const router = useRouter();
-    const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible2, setModalVisible2] = useState(false);
+  
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          const userId = parsedUser._id;
+  
+          const response = await fetch(`${API_URL}/api/users/${userId}`);
+          const data = await response.json();
+  
+          if (response.ok) {
+            setUser(data); // 👈 Set user first
+          } else {
+            Alert.alert('Error', 'Failed to fetch user data.');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    };
+  
+    fetchUserData();
+  }, []);
+  
+  // 👉 Now, watch `user` and fetch posts after user is ready
+  useEffect(() => {
+    const fetchPosts = async () => {
+      if (!user) return;
+  
+      try {
+        const response = await fetch(`${API_URL}/api/posts/user/${user._id}`);
+        const result = await response.json();
+  
+        if (!response.ok) {
+          console.error('Failed to fetch posts:', result?.message || 'Unknown error');
+          return;
+        }
+  
+        const postsArray = result.data; // 👈 correctly extract array
+  
+        if (!Array.isArray(postsArray)) {
+          console.error('Posts data is not an array:', postsArray);
+          return;
+        }
+  
+        const postsWithUserData = postsArray.map((post) => ({
+          ...post,
+          profileName: `${user.firstName} ${user.lastName}`,
+          profileImage: user.profilePic
+            ? { uri: `${API_URL}/uploads/${user.profilePic}` }
+            : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' },
+          postImage: { uri: `${API_URL}/uploads/postImages/${post.images[0]}` },
+          postDate: formatPostDate(post.createdAt),
+          likeCount: post.likes ? post.likes.length : 0,
+          commentCount: post.comments ? post.comments.length : 0,
+          shareCount: post.shares ? post.shares.length : 0,
+        }));
+  
+        setPosts(postsWithUserData);
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchPosts();
+  }, [user]);  
+  
+
+    const formatPostDate = (dateString: string) => {
+      const postDate = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
+    
+      if (diffInSeconds < 60) {
+        return 'Just added';
+      }
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes} min ago`;
+      }
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) {
+        return `${diffInHours} hr${diffInHours > 1 ? 's' : ''} ago`;
+      }
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) {
+        return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+      }
+    
+      // If more than 7 days, show full date
+      const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+      return postDate.toLocaleDateString(undefined, options); 
+    };
+
+  const profileImageSource = user?.profilePic
+  ? { uri: `${API_URL}/uploads/${user.profilePic}` }
+  : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' };
+
+  const coverprofileImageSource = user?.coverPic
+  ? { uri: `${API_URL}/uploads/coverPics/${user.coverPic}` }
+  : { uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Image_not_available.png/640px-Image_not_available.png' };
+
+    
     const handleLike = () => {
       console.log('Liked!');
     };
@@ -24,51 +152,29 @@ const MyProfile: React.FC = () => {
     const handleSend = () => {
       console.log('Sent!');
     };
-  const posts = [
-      {
-        profileImage: require('../assets/images/my-profile-image.jpg'),
-        profileName: 'John Doe',
-        postImage: require('../assets/images/LinkedIn-Post1.jpg'),
-        postText: 'Teamwork combines unique skills and perspectives, creating results greater than the sum of individual efforts. Effective teamwork drives innovation, enhances problem-solving, and boosts productivity. It builds a culture of support and accountability, where challenges are tackled together and successes are shared. True teamwork relies on communication, trust, and a shared vision, fostering an environment where everyone thrives',
-      },
-      {
-        profileImage: require('../assets/images/my-profile-image.jpg'),
-        profileName: 'Jane Smith',
-        postImage: require('../assets/images/LinkedIn-Post2.jpg'),
-        postText: 'Discover the latest trends and strategies in online business. Learn from industry experts, gain valuable insights, and find out how to grow your business effectively. Whether you are experienced or just starting out, this webinar offers practical tips and tools for success. Do not miss this opportunity to network and enhance your online business skills.',
-      },
-      {
-        profileImage: require('../assets/images/my-profile-image.jpg'),
-        profileName: 'Alice Johnson',
-        postImage: require('../assets/images/LinkedIn-Post3.jpg'),
-        postText: 'This is the content of post 3',
-      },
-      {
-        profileImage: require('../assets/images/my-profile-image.jpg'),
-        profileName: 'Gary Vaynerchuk',
-        postImage: require('../assets/images/LinkedIn-Post5.jpg'),
-        postText: '',
-      },
-      {
-        profileImage: require('../assets/images/my-profile-image.jpg'),
-        profileName: 'Charlie Davis',
-        postImage: require('../assets/images/LinkedIn-Post4.jpg'),
-        postText: 'This is the content of post 5',
-      },
-      {
-        profileImage: require('../assets/images/my-profile-image.jpg'),
-        profileName: 'John Doe',
-        postImage: require('../assets/images/LinkedIn-Post1.jpg'),
-        postText: 'Teamwork combines unique skills and perspectives, creating results greater than the sum of individual efforts. Effective teamwork drives innovation, enhances problem-solving, and boosts productivity. It builds a culture of support and accountability, where challenges are tackled together and successes are shared. True teamwork relies on communication, trust, and a shared vision, fostering an environment where everyone thrives',
-      },
-      
-    ];
+    const formatConnections = (connections: any) => {
+      if (connections === 0) {
+        return '0 connections';
+      } else if (connections < 100) {
+        return `${connections} connections`;
+      } else if (connections >= 1000) {
+        return `${Math.floor(connections / 1000) * 1000}+ connections`;
+      } else {
+        return `${Math.floor(connections / 100) * 100}+ connections`;
+      }
+    };
+    
+
+
+    if (loading) {
+      return <Text>Loading...</Text>;
+    }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.push('/home')}>
           <FontAwesome name="arrow-left" size={24} color="black" />
         </TouchableOpacity>
         <TextInput style={styles.searchBar} placeholder="Search" />       
@@ -76,27 +182,37 @@ const MyProfile: React.FC = () => {
 
       {/* Background Image and Profile Section */}
       <View style={styles.backgroundContainer}>
-        <Image source={require('../assets/images/my-profile-bi.png')} style={styles.backgroundImage} />
+        <Image source={coverprofileImageSource} style={styles.backgroundImage} />
         <TouchableOpacity style={styles.editBackgroundIcon} onPress={() => setModalVisible(true)}>
           <FontAwesome name="camera" size={20} color="black" />
         </TouchableOpacity>
-        <Image source={require('../assets/images/my-profile-image.jpg')} style={styles.profileImage} />
-        <TouchableOpacity style={styles.addIcon} onPress={() => setModalVisible(true)}>
+        <Image source={profileImageSource} style={styles.profileImage} />
+        <TouchableOpacity style={styles.addIcon} onPress={() => setModalVisible2(true)}>
           <FontAwesome name="plus-circle" size={23} color="#FF8B04" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.editProfileIcon} onPress={() => router.push('/groupcreation/AddBioScreen')}>
+        <TouchableOpacity style={styles.editProfileIcon} onPress={() => router.push(`/groupcreation/AddBioScreen?id=${user?._id}`)}>
           <FontAwesome name="pencil" size={20} color="black" />
         </TouchableOpacity>
       </View>
 
       {/* Profile Information */}
-      <Text style={styles.name}>Parami Ashinsana</Text>
-      <Text style={styles.info1}>Student at Institute of Software Engineering (IJSE)</Text>
-      <Text style={styles.info2}>IJSE-Institute of Software Engineering ▪️ IJSE-Institute of Software Engineering </Text>
-      <Text style={styles.info3}>Kaluthara District, Western Province, Sri Lanka</Text>
-      <Text style={styles.info4}>3000+ connections</Text>
+      <Text style={styles.name}>{user?.firstName} {user?.lastName}</Text>
+      {user?.workExperience && user.workExperience.length > 0 && (
+  <Text style={styles.info1}>
+    {`${user.workExperience[0].jobTitle} at ${user.workExperience[0].company}`}
+  </Text>
+)}
+
+{user?.education && user.education.length > 0 && (
+  <Text style={styles.info1}>
+    {`${user.education[0].institution} - ${user.education[0].degree}`}
+  </Text>
+)}
+      {user?.bio && <Text style={styles.info2}>{user.bio}</Text>}
+      {user?.address && <Text style={styles.info3}>{user.address}</Text>}
+      <Text style={styles.info4}>{formatConnections(user?.connections)}</Text>
              {/* Manage Button */}
-             <TouchableOpacity style={styles.manageButton} onPress={() => router.push('/groupcreation/ProfileSettingsScreen')}>
+             <TouchableOpacity style={styles.manageButton} onPress={() => router.push(`/groupcreation/ProfileSettingsScreen?id=${user?._id}`)}>
                <Text style={styles.manageText}>Manage Profile</Text>
              </TouchableOpacity>
              <TouchableOpacity style={styles.manageButton} onPress={() => router.push('/Analytics')}>
@@ -106,7 +222,7 @@ const MyProfile: React.FC = () => {
            {/* Separator */}
            <View style={styles.separator} />
            <View style={styles.postInputContainer}>
-                   <Image source={require('../assets/images/my-profile-image.jpg')} style={styles.profileImage1} />
+                   <Image source={profileImageSource} style={styles.profileImage1} />
                    <TextInput style={styles.input} placeholder="Write something..." />
                    <TouchableOpacity>
                      <Ionicons name="image-outline" size={30} color="#FF8B04" />
@@ -117,19 +233,24 @@ const MyProfile: React.FC = () => {
         {/* <Text style={styles.title}>Home Screen</Text> */}
         {posts.map((post, index) => (
           <Post
-            key={index}
-            profileImage={post.profileImage}
-            profileName={post.profileName}
-            postImage={post.postImage}
-            postText={post.postText}
-            onLike={handleLike}
-            onComment={handleComment}
-            onRepost={handleRepost}
-            onSend={handleSend}
-          />
+          key={index}
+          profileImage={post.profileImage}
+          profileName={post.profileName}
+          postImage={post.postImage}
+          postText={post.caption}
+          postDate={post.postDate}
+          onLike={handleLike}
+          onComment={handleComment}
+          onSend={handleSend}
+          likesCount={post.likeCount}       
+          commentsCount={post.commentCount}
+          sharesCount={post.shareCount}   
+
+        />
         ))}
     </View>
-      <ChangeCoverPhotoModal visible={modalVisible} onClose={() => setModalVisible(false)} />
+      <ChangeCoverPhotoModal visible={modalVisible} userId={user?._id} onClose={() => setModalVisible(false)} />
+      <ChnageProfilePhotoModal visible={modalVisible2} onClose={() => setModalVisible2(false)} />
     </ScrollView>
   );
 };
@@ -139,7 +260,6 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
     flexGrow: 1,
-    marginTop: 13,
   },
   container1: {
     flex: 1,
@@ -148,7 +268,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 5,
+    marginBottom: 15,
   },
   searchBar: {
     flex: 1,
@@ -185,7 +305,7 @@ const styles = StyleSheet.create({
   addIcon: {
     position: 'absolute',
     bottom: -35,
-    left: 90,
+    left: 95,
   },
   editProfileIcon: {
     position: 'absolute',
@@ -241,7 +361,6 @@ const styles = StyleSheet.create({
   postInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
   },
   input: {
     flex: 1,
@@ -249,8 +368,8 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 20,
     paddingHorizontal: 15,
-    paddingVertical: 10,
     fontSize: 14,
+    marginRight:10,
     backgroundColor: '#f9f9f9',
   },
   profileImage1: {

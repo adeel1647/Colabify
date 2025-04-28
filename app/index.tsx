@@ -7,7 +7,7 @@ export default function FirstPage() {
   return (
     <View style={styles.container}>
       <Image source={require('../assets/images/adaptive-icon.png')} style={styles.image} />
-      <Text style={styles.title}>Join a trusted community of 1B professionals</Text>
+      <Text style={styles.title}>COLLABIFY</Text>
 
 
       <View style={styles.bottomContainer}>
@@ -15,7 +15,7 @@ export default function FirstPage() {
         By clicking Agree & Join or Continue,you agree to the Colabify User Agreement, Privacy Policy, and Cookie Policy
       </Text>
       
-      <TouchableOpacity style={styles.button1} onPress={() => router.push('/signup')}>
+      <TouchableOpacity style={styles.button1} onPress={() => router.push('/home')}>
         <Text style={styles.buttonText1}>Agree & Join</Text>
       </TouchableOpacity>
       
@@ -55,17 +55,19 @@ const styles = StyleSheet.create({
   image: {
     width: 200,
     height: 100,
-    // borderWidth: 2,
-    // borderColor: '#000',
     marginBottom: 20,
+    bottom:80
   },
   title: {
     width: 350,
     height: 100,
-    fontSize: 20,
-    fontWeight: '300',
+    fontSize: 25,
+    textAlign:"center",
+    fontWeight: '500',
+    bottom:110,
     marginBottom: 140,
     marginTop:20,
+    letterSpacing:10,
   },
   paragraph: {
     fontSize: 11,

@@ -1,11 +1,111 @@
-// Index.tsx
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator } from 'react-native';
 import Post from '../../components/Post';
 import Header from '../../components/Header';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/config';
 
+interface PostData {
+  _id: string;
+  caption: string;
+  images: string[];
+  createdAt: string;
+  likes:string[];
+  shares:string[];
+  comments:string[];
+  userId: {
+    _id: string;
+    email: string;
+  };
+}
+
+interface UserData {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  profilePic: string;
+}
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const fetchUserData = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('userData');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+      }
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
+  };
+  const formatPostDate = (dateString: string) => {
+    const postDate = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
+  
+    if (diffInSeconds < 60) {
+      return 'Just added';
+    }
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} min ago`;
+    }
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) {
+      return `${diffInHours} hr${diffInHours > 1 ? 's' : ''} ago`;
+    }
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) {
+      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    }
+  
+    // If more than 7 days, show full date
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+    return postDate.toLocaleDateString(undefined, options); 
+  };
+  
+  const fetchPosts = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/posts/`);
+      const postsData: PostData[] = await response.json();
+  
+      const postsWithUserData = await Promise.all(
+        postsData.map(async (post) => {
+          const userResponse = await fetch(`${API_URL}/api/users/${post.userId._id}`);
+          const userData: UserData = await userResponse.json();
+          return {
+            ...post,
+            profileName: `${userData.firstName} ${userData.lastName}`,
+            profileImage: userData.profilePic
+              ? { uri: `${API_URL}/uploads/${userData.profilePic}` }
+              : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' }, 
+            postImage: { uri: `${API_URL}/uploads/postImages/${post.images[0]}` },
+            postDate: formatPostDate(post.createdAt),
+            likeCount: post.likes ? post.likes.length : 0,       
+            commentCount: post.comments ? post.comments.length : 0, 
+            shareCount: post.shares ? post.shares.length : 0,     
+          };
+        })
+      );
+  
+      setPosts(postsWithUserData);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  useEffect(() => {
+    fetchUserData();
+    fetchPosts();
+  }, []);
+
   const handleLike = () => {
     console.log('Liked!');
   };
@@ -13,140 +113,38 @@ export default function Home() {
   const handleComment = () => {
     console.log('Commented!');
   };
-
-  const handleRepost = () => {
-    console.log('Reposted!');
-  };
-
+  
   const handleSend = () => {
     console.log('Sent!');
   };
 
-  const posts = [
-    {
-      profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-      profileName: 'John Doe',
-      postImage: require('../../assets/images/LinkedIn-Post1.jpg'),
-      postText: 'Teamwork combines unique skills and perspectives, creating results greater than the sum of individual efforts. Effective teamwork drives innovation, enhances problem-solving, and boosts productivity. It builds a culture of support and accountability, where challenges are tackled together and successes are shared. True teamwork relies on communication, trust, and a shared vision, fostering an environment where everyone thrives',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-      profileName: 'Jane Smith',
-      postImage: require('../../assets/images/LinkedIn-Post2.jpg'),
-      postText: 'Discover the latest trends and strategies in online business. Learn from industry experts, gain valuable insights, and find out how to grow your business effectively. Whether you are experienced or just starting out, this webinar offers practical tips and tools for success. Do not miss this opportunity to network and enhance your online business skills.',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture3.jpg'),
-      profileName: 'Alice Johnson',
-      postImage: require('../../assets/images/LinkedIn-Post3.jpg'),
-      postText: 'This is the content of post 3',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture4.jpg'),
-      profileName: 'Gary Vaynerchuk',
-      postImage: require('../../assets/images/LinkedIn-Post5.jpg'),
-      postText: '',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture5.jpg'),
-      profileName: 'Charlie Davis',
-      postImage: require('../../assets/images/LinkedIn-Post4.jpg'),
-      postText: 'This is the content of post 5',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-      profileName: 'John Doe',
-      postImage: require('../../assets/images/LinkedIn-Post1.jpg'),
-      postText: 'Teamwork combines unique skills and perspectives, creating results greater than the sum of individual efforts. Effective teamwork drives innovation, enhances problem-solving, and boosts productivity. It builds a culture of support and accountability, where challenges are tackled together and successes are shared. True teamwork relies on communication, trust, and a shared vision, fostering an environment where everyone thrives',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-      profileName: 'Jane Smith',
-      postImage: require('../../assets/images/LinkedIn-Post2.jpg'),
-      postText: 'Discover the latest trends and strategies in online business. Learn from industry experts, gain valuable insights, and find out how to grow your business effectively. Whether you are experienced or just starting out, this webinar offers practical tips and tools for success. Do not miss this opportunity to network and enhance your online business skills.',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture3.jpg'),
-      profileName: 'Alice Johnson',
-      postImage: require('../../assets/images/LinkedIn-Post3.jpg'),
-      postText: 'This is the content of post 3',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture4.jpg'),
-      profileName: 'Gary Vaynerchuk',
-      postImage: require('../../assets/images/LinkedIn-Post5.jpg'),
-      postText: '',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture5.jpg'),
-      profileName: 'Charlie Davis',
-      postImage: require('../../assets/images/LinkedIn-Post4.jpg'),
-      postText: 'This is the content of post 5',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-      profileName: 'John Doe',
-      postImage: require('../../assets/images/LinkedIn-Post1.jpg'),
-      postText: 'Teamwork combines unique skills and perspectives, creating results greater than the sum of individual efforts. Effective teamwork drives innovation, enhances problem-solving, and boosts productivity. It builds a culture of support and accountability, where challenges are tackled together and successes are shared. True teamwork relies on communication, trust, and a shared vision, fostering an environment where everyone thrives',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-      profileName: 'Jane Smith',
-      postImage: require('../../assets/images/LinkedIn-Post2.jpg'),
-      postText: 'Discover the latest trends and strategies in online business. Learn from industry experts, gain valuable insights, and find out how to grow your business effectively. Whether you are experienced or just starting out, this webinar offers practical tips and tools for success. Do not miss this opportunity to network and enhance your online business skills.',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture3.jpg'),
-      profileName: 'Alice Johnson',
-      postImage: require('../../assets/images/LinkedIn-Post3.jpg'),
-      postText: 'This is the content of post 3',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture4.jpg'),
-      profileName: 'Gary Vaynerchuk',
-      postImage: require('../../assets/images/LinkedIn-Post5.jpg'),
-      postText: '',
-    },
-    {
-      profileImage: require('../../assets/images/Profile-Picture5.jpg'),
-      profileName: 'Charlie Davis',
-      postImage: require('../../assets/images/LinkedIn-Post4.jpg'),
-      postText: 'This is the content of post 5',
-    },
-  ];
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
-    // <ScrollView contentContainerStyle={styles.container}>
-    //   <Text style={styles.title}>Home Screen</Text>
-    //   {posts.map((post, index) => (
-    //     <Post
-    //       key={index}
-    //       profileImage={post.profileImage}
-    //       profileName={post.profileName}
-    //       postImage={post.postImage}
-    //       postText={post.postText}
-    //       onLike={handleLike}
-    //       onComment={handleComment}
-    //       onRepost={handleRepost}
-    //       onSend={handleSend}
-    //     />
-    //   ))}
-    // </ScrollView>
     <View style={styles.container}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollView}>
-        {/* <Text style={styles.title}>Home Screen</Text> */}
         {posts.map((post, index) => (
           <Post
             key={index}
             profileImage={post.profileImage}
             profileName={post.profileName}
             postImage={post.postImage}
-            postText={post.postText}
+            postText={post.caption}
+            postDate={post.postDate}
             onLike={handleLike}
             onComment={handleComment}
-            onRepost={handleRepost}
             onSend={handleSend}
+            likesCount={post.likeCount}       
+            commentsCount={post.commentCount}
+            sharesCount={post.shareCount}   
+
           />
         ))}
       </ScrollView>
@@ -163,10 +161,9 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     backgroundColor: '#f0f0f0',
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

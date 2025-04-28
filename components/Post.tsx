@@ -1,19 +1,22 @@
-// Post.tsx
 import React from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { useState } from 'react';
 
 interface PostProps {
   profileImage: any;
   profileName: string;
   postImage: any;
   postText: string;
+  postDate: string;
   onLike: () => void;
   onComment: () => void;
-  onRepost: () => void;
   onSend: () => void;
+  likesCount: number;    // ➡️ new
+  commentsCount: number; // ➡️ new
+  sharesCount: number;   // ➡️ new
 }
+
 
 const { width } = Dimensions.get('window');
 
@@ -22,46 +25,71 @@ const Post: React.FC<PostProps> = ({
   profileName,
   postImage,
   postText,
+  postDate,
   onLike,
   onComment,
-  onRepost,
   onSend,
+  likesCount,
+  commentsCount,
+  sharesCount,
 }) => {
-  
-    return (
-        <View style={styles.postContainer}>
-          <View style={styles.header}>
-            <Image source={profileImage} style={styles.profileImage} />
-            <View style={styles.headerText}>
-              <Text style={styles.profileName}>{profileName}</Text>
-          </View> 
-            <TouchableOpacity style={styles.followButton}>
-              <Text style={styles.followButtonText}>+ Follow</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.postText}>{postText}</Text>
-          <Image source={postImage} style={styles.postImage} />
-          <View style={styles.separator} />
-          <View style={styles.iconsContainer}>
-            <TouchableOpacity onPress={onLike} style={styles.iconButton}>
-              <FontAwesome name="thumbs-up" size={21} color="grey" />
-              <Text style={styles.iconLabel}>Like</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onComment} style={styles.iconButton}>
-              <FontAwesome name="comment" size={21} color="grey" />
-              <Text style={styles.iconLabel}>Comment</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onRepost} style={styles.iconButton}>
-              <FontAwesome name="retweet" size={21} color="grey" />
-              <Text style={styles.iconLabel}>Repost</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onSend} style={styles.iconButton}>
-              <FontAwesome name="send" size={21} color="grey" />
-              <Text style={styles.iconLabel}>Send</Text>
-            </TouchableOpacity>
-          </View>
+  const [showFullText, setShowFullText] = useState(false);
+
+  const toggleText = () => {
+    setShowFullText(!showFullText);
+  };
+
+  return (
+    <View style={styles.postContainer}>
+      <View style={styles.header}>
+        <Image source={profileImage} style={styles.profileImage} />
+        <View style={styles.headerText}>
+          <Text style={styles.profileName}>{profileName}</Text>
+          <Text style={styles.postDate}>{postDate}</Text>
         </View>
-      );
+        <TouchableOpacity style={styles.followButton}>
+          <Text style={styles.followButtonText}>+ Follow</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text
+        style={styles.postText}
+        numberOfLines={showFullText ? undefined : 4}
+        ellipsizeMode="tail"
+      >
+        {postText}
+      </Text>
+
+      {postText.length > 100 && (
+        <TouchableOpacity onPress={toggleText}>
+          <Text style={styles.showMoreText}>
+            {showFullText ? 'Show Less' : 'Show More'}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      <Image source={postImage} style={styles.postImage} />
+      <View style={styles.separator} />
+
+      <View style={styles.iconsContainer}>
+        <TouchableOpacity onPress={onLike} style={styles.iconButton}>
+          <FontAwesome name="thumbs-up" size={21} color="grey" />
+          <Text style={styles.iconLabel}>Like ({likesCount})</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={onComment} style={styles.iconButton}>
+          <FontAwesome name="comment" size={21} color="grey" />
+          <Text style={styles.iconLabel}>Comment ({commentsCount})</Text> 
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={onSend} style={styles.iconButton}>
+          <FontAwesome name="send" size={21} color="grey" />
+          <Text style={styles.iconLabel}>Share ({sharesCount})</Text> 
+        </TouchableOpacity>
+      </View>
+
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -95,6 +123,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
   },
+  postDate: {
+    fontSize: 11,
+    color: 'grey',
+    marginTop: 2,
+  },
   followButton: {
     padding: 5,
     backgroundColor: '#FF8B04',
@@ -111,6 +144,11 @@ const styles = StyleSheet.create({
   },
   postText: {
     fontSize: 13,
+    marginBottom: 5,
+  },
+  showMoreText: {
+    fontSize: 13,
+    color: '#FF8B04',
     marginBottom: 10,
   },
   separator: {

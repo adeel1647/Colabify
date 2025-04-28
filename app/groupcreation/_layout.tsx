@@ -14,6 +14,10 @@ export default function RootLayout() {
       <Stack.Screen name="PostScreen" options={{headerShown:false}} />
       <Stack.Screen name="SettingsScreen" options={{headerShown:false}} />
       <Stack.Screen name="CreateGroupScreen" options={{headerShown:false}} />
+      <Stack.Screen name="AddEducationScreen" options={{headerShown:false}} />
+      <Stack.Screen name="AddWorkExperienceScreen" options={{headerShown:false}} />
+      <Stack.Screen name="UpdateAddressScreen" options={{headerShown:false}} />
+
     </Stack>
   );
 }

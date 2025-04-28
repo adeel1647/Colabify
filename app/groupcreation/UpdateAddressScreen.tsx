@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { useLocalSearchParams, router } from 'expo-router';  
 import { API_URL } from '@/config';
 
-const AddBioScreen = () => {
+const UpdateAddressScreen = () => {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false); // New loading state
   const { id } = useLocalSearchParams();
@@ -18,18 +18,18 @@ const AddBioScreen = () => {
   const fetchBio = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/users/${id}/bio`);
+      const response = await fetch(`${API_URL}/api/users/${id}/get-address`);
       const data = await response.json();
 
       if (response.ok) {
-        setDescription(data.bio || ''); // set fetched bio
+        setDescription(data.address || ''); // set fetched bio
       } else {
-        console.error('Failed to fetch bio:', data);
-        Alert.alert('Error', data.message || 'Failed to load bio.');
+        console.error('Failed to fetch address:', data);
+        Alert.alert('Error', data.message || 'Failed to load address.');
       }
     } catch (error) {
-      console.error('Error fetching bio:', error);
-      Alert.alert('Error', 'Something went wrong while loading bio.');
+      console.error('Error fetching address:', error);
+      Alert.alert('Error', 'Something went wrong while loading address.');
     } finally {
       setLoading(false);
     }
@@ -37,31 +37,31 @@ const AddBioScreen = () => {
 
   const handleSaveBio = async () => {
     if (!description.trim()) {
-      Alert.alert('Error', 'Please enter a bio.');
+      Alert.alert('Error', 'Please enter a address.');
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/users/${id}/bio`, {
+      const response = await fetch(`${API_URL}/api/users/${id}/update-address`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ bio: description }),
+        body: JSON.stringify({ address: description }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         console.log('Bio updated:', data);
-        Alert.alert('Success', 'Bio updated successfully!');
+        Alert.alert('Success', 'Address updated successfully!');
         router.push('/myProfile'); // Navigate back to profile
       } else {
-        console.error('Failed to update bio:', data);
-        Alert.alert('Error', data.message || 'Failed to update bio.');
+        console.error('Failed to update address:', data);
+        Alert.alert('Error', data.message || 'Failed to update address.');
       }
     } catch (error) {
-      console.error('Error updating bio:', error);
+      console.error('Error updating address:', error);
       Alert.alert('Error', 'Something went wrong. Try again later.');
     }
   };
@@ -70,7 +70,7 @@ const AddBioScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Edit Bio</Text>
+        <Text style={styles.headerText}>Edit Address</Text>
         <TouchableOpacity onPress={handleSaveBio}>
           <Text style={styles.doneText}>Done</Text>
         </TouchableOpacity>
@@ -80,9 +80,9 @@ const AddBioScreen = () => {
       <View style={styles.separator} />
 
       {/* Description Section */}
-      <Text style={styles.title}>Bio</Text>
+      <Text style={styles.title}>Address</Text>
       <Text style={styles.subtitle}>
-        Describe your profile so people know what it's about.
+        Add your address so people know where you are located.
       </Text>
 
       {/* Loading indicator */}
@@ -91,7 +91,7 @@ const AddBioScreen = () => {
       ) : (
         <TextInput
           style={styles.textArea}
-          placeholder="Describe what your profile is about..."
+          placeholder="Enter your address..."
           value={description}
           onChangeText={setDescription}
           multiline
@@ -101,7 +101,7 @@ const AddBioScreen = () => {
   );
 };
 
-export default AddBioScreen;
+export default UpdateAddressScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 20 },
