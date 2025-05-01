@@ -4,6 +4,7 @@ import Post from '../../components/Post';
 import Header from '../../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/config';
+import PostLoadingSkeleton from '@/components/PostLoadingSkeleton';
 
 interface PostData {
   _id: string;
@@ -83,7 +84,7 @@ export default function Home() {
             profileImage: userData.profilePic
               ? { uri: `${API_URL}/uploads/${userData.profilePic}` }
               : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' }, 
-            postImage: { uri: `${API_URL}/uploads/postImages/${post.images[0]}` },
+            postImages: post.images.map(img => ({ uri: `${API_URL}/uploads/postImages/${img}` })),
             postDate: formatPostDate(post.createdAt),
             likeCount: post.likes ? post.likes.length : 0,       
             commentCount: post.comments ? post.comments.length : 0, 
@@ -118,38 +119,38 @@ export default function Home() {
     console.log('Sent!');
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollView}>
-        {posts.map((post, index) => (
-          <Post
-            key={index}
-            profileImage={post.profileImage}
-            profileName={post.profileName}
-            postImage={post.postImage}
-            postText={post.caption}
-            postDate={post.postDate}
-            onLike={handleLike}
-            onComment={handleComment}
-            onSend={handleSend}
-            likesCount={post.likeCount}       
-            commentsCount={post.commentCount}
-            sharesCount={post.shareCount}   
-
-          />
-        ))}
+        {loading ? (
+          <>
+            <PostLoadingSkeleton />
+            <PostLoadingSkeleton />
+            <PostLoadingSkeleton />
+          </>
+        ) : (
+          posts.map((post, index) => (
+            <Post
+              key={index}
+              profileImage={post.profileImage}
+              profileName={post.profileName}
+              postImages={post.postImages}
+              postText={post.caption}
+              postDate={post.postDate}
+              onLike={handleLike}
+              onComment={handleComment}
+              onSend={handleSend}
+              likesCount={post.likeCount}
+              commentsCount={post.commentCount}
+              sharesCount={post.shareCount}
+            />
+          ))
+        )}
       </ScrollView>
     </View>
   );
+  
 }
 
 const styles = StyleSheet.create({
@@ -160,10 +161,5 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingVertical: 1,
     backgroundColor: '#f0f0f0',
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

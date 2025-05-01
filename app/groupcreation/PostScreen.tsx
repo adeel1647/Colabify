@@ -1,126 +1,268 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import {Link, router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, TextInput, TouchableOpacity, Text, Image, Alert } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import Header from '../../components/NewPost';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { API_URL } from '@/config';
+import { useLocalSearchParams, router } from 'expo-router';
 
-const CreatePostScreen = () => {
-  const [postText, setPostText] = useState('');
+
+const CreatePostScreen: React.FC = () => {
+  const [thoughts, setThoughts] = useState('');
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+  const { groupId } = useLocalSearchParams(); 
+  
+
+  useEffect(() => {
+      const fetchUserData = async () => {
+        try {
+          const userData = await AsyncStorage.getItem('userData');
+          if (userData) {
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
+            console.log(parsedUser.name);       // ➔ "Adeel Ahmed"
+            console.log(parsedUser._id);
+            console.log(parsedUser.profilePic); // ➔ Profile pic filename
+          }
+        } catch (error) {
+          console.error('Failed to load user data:', error);
+        }
+      };
+  
+      fetchUserData();
+    }, []);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'We need permission to access your gallery.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uris = result.assets.map(asset => asset.uri);
+      setSelectedImages(prev => [...prev, ...uris]);
+    }
+  };
+
+  const deleteImage = (uriToDelete: string) => {
+    setSelectedImages(prev => prev.filter(uri => uri !== uriToDelete));
+  };
+
+  const handlePost = async () => {
+    if (!thoughts.trim() && selectedImages.length === 0) {
+      Alert.alert('Cannot Post', 'Please write something or select an image.');
+      return;
+    }
+  
+    const formData = new FormData();
+    formData.append('userId', user._id);
+    formData.append('pageId', groupId);
+    formData.append('caption', thoughts);
+  
+    selectedImages.forEach((uri, index) => {
+      const filename = uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename ?? '');
+      const type = match ? `image/${match[1]}` : `image`;
+  
+      formData.append('images', {
+        uri,
+        name: filename,
+        type,
+      } as any); // 👈 Sometimes need to force cast for FormData
+    });
+  
+    try {
+      const response = await fetch(`${API_URL}/api/groupPosts/postcreate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formData,
+      });
+  
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Post created successfully:', responseData);
+        Alert.alert('Success', 'Post created!');
+  
+        // Clear the data after post creation
+        setThoughts('');
+        setSelectedImages([]);
+        setUser(null); // Optional: Clear the user data if you want
+  
+        // Redirect to home page
+        router.push('/home');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to create post:', errorData);
+        Alert.alert('Error', errorData.message || 'Failed to create post.');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      Alert.alert('Error', 'Something went wrong.');
+    }
+  };
+  
+  const profileImageSource = user?.profilePic
+      ? { uri: `${API_URL}/uploads/${user.profilePic}` }
+      : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' };
+
+    
+  
+
+  const renderItem = ({ item, drag, isActive }: RenderItemParams<string>) => {
+    return (
+      <TouchableOpacity
+        style={[styles.imageWrapper, isActive && { opacity: 0.8 }]}
+        onLongPress={drag}
+        activeOpacity={0.9}
+      >
+        <Image source={{ uri: item }} style={styles.selectedImage} />
+        <TouchableOpacity style={styles.deleteButton} onPress={() => deleteImage(item)}>
+          <FontAwesome name="close" size={16} color="#fff" />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.groupName}>Colabify</Text>
-        <TouchableOpacity onPress={() => router.push('/groupcreation/GroupScreen')}>
-          <Text style={styles.postButton}>POST</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Separator */}
-      <View style={styles.separator} />
-
-      {/* User Info */}
-      <View style={styles.userInfo}>
-        <Image source={require('../../assets/images/Company08.jpg')} style={styles.userImage} />
-        <Text style={styles.userName}>John Doe</Text>
-      </View>
-
-      {/* Post Description */}
-      <TextInput
-        style={styles.textArea}
-        placeholder="What's on your mind?"
-        multiline
-        value={postText}
-        onChangeText={setPostText}
+      <Header
+        profileImage={profileImageSource}
+        smallText={user?.name}
+        onPendingPress={() => console.log('Pending pressed')}
+        onPostPress={handlePost}
       />
 
-      {/* Media Upload Option */}
-      <TouchableOpacity style={styles.mediaButton}>
-        <Ionicons name="image-outline" size={24} color="#FF8B04" />
-        <Text style={styles.mediaText}>Photos/Videos</Text>
-      </TouchableOpacity>
+      <TextInput
+        style={styles.textArea}
+        placeholder="Share your thoughts..."
+        placeholderTextColor="#999"
+        multiline
+        numberOfLines={4}
+        maxLength={500}
+        value={thoughts}
+        onChangeText={setThoughts}
+      />
 
-      {/* Post Button */}
-      <TouchableOpacity style={styles.createPostButton} onPress={() => router.push('/groupcreation/GroupScreen')}>
-        <Text style={styles.createPostButtonText}>POST</Text>
-      </TouchableOpacity>
+      {/* Show selected images */}
+      <View style={{ marginTop: 15 }}>
+        <DraggableFlatList
+          data={selectedImages}
+          horizontal
+          keyExtractor={(item, index) => `draggable-item-${item}-${index}`}
+          onDragEnd={({ data }) => setSelectedImages(data)}
+          renderItem={renderItem}
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
+
+      {/* Camera and Gallery buttons */}
+      <View style={styles.bottomRightSidebar}>
+        <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
+          <FontAwesome name="camera" size={28} color="#FF8B04" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
+          <FontAwesome name="photo" size={28} color="#34C759" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
-export default CreatePostScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 15,
     backgroundColor: '#fff',
-    padding: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  groupName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  postButton: {
-    fontSize: 16,
-    color: '#FF8B04',
-    fontWeight: 'bold',
-  },
-  separator: {
-    height: 2,
-    backgroundColor: '#ddd',
-    marginVertical: 10,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    marginTop:20,
-  },
-  userImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   textArea: {
-    height: 150,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingTop: 10,
+    height: 350,  // << limit height
+    marginTop: 15,
+    padding: 15,
     fontSize: 16,
     backgroundColor: '#f9f9f9',
+    borderRadius: 10,
     textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
   },
-  mediaButton: {
+  imageContainer: {
+    marginTop: 10,
     flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
   },
-  mediaText: {
-    fontSize: 16,
-    color: 'black',
-    marginLeft: 8,
+  selectedImage: {
+    width: 100,
+    height: 100,
+    marginRight: 10,
+    borderRadius: 10,
   },
-  createPostButton: {
-    backgroundColor: '#FF8B04',
-    paddingVertical: 15,
+  bottomRightSidebar: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  iconButton: {
+    marginLeft: 15,
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  imageWrapper: {
+    marginRight: 10,
+    position: 'relative',
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 1,
+    right: 10,
+    backgroundColor: 'rgba(248, 7, 7, 0.6)',
     borderRadius: 8,
-    alignItems: 'center',
-  },
-  createPostButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
+    padding: 5,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },  
 });
+
+export default CreatePostScreen;

@@ -3,10 +3,37 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator
 import { Feather, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router'; 
 import { API_URL } from '@/config'; // Make sure API_URL points to your server
+import SettingsScreenSkeleton from '@/components/SettingsScreenSkeleton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface WorkExperience {
+  jobTitle: string;
+  company: string;
+  from: string;
+  to: string;
+}
+
+interface Education {
+  institution: string;
+  degree: string;
+  from: string;
+  to: string;
+}
+
+interface User {
+  _id: string;
+  mobileNumber?: string;
+  email?: string;
+  workExperience?: WorkExperience[];
+  education?: Education[];
+  address?: string;
+  gender?: string;
+  dateOfBirth?: string;
+}
 
 const ProfileSettingsScreen = () => {
   const { id } = useLocalSearchParams(); // Get id from URL params
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -34,23 +61,35 @@ const ProfileSettingsScreen = () => {
       setLoading(false);
     }
   };
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string): string => {
     if (dateString.toLowerCase() === "present") {
       return "Present";
     }
-    
-    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+  
+    const options: Intl.DateTimeFormatOptions = {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    };
+  
     return new Date(dateString).toLocaleDateString('en-GB', options);
   };
   
+  const handleLogout = async () => {
+      try {
+        await AsyncStorage.removeItem('userData');
+        console.log('User data removed');
+        router.push('/');
+      } catch (error) {
+        console.error('Failed to remove user data:', error);
+        Alert.alert('Error', 'An error occurred during logout');
+      }
+    };
+  
 
   if (loading) {
-    return (
-      <View >
-        <ActivityIndicator size="large" color="#FF8B04" />
-      </View>
-    );
-  }
+    return <SettingsScreenSkeleton />;
+  }  
 
   if (!user) {
     return (
@@ -204,7 +243,7 @@ const ProfileSettingsScreen = () => {
 
       {/* Bottom Action Icons */}
       <View style={styles.iconRow}>
-  <TouchableOpacity style={styles.logoutContainer}>
+  <TouchableOpacity style={styles.logoutContainer} onPress={handleLogout}>
     <Ionicons name="log-out-outline" size={32} color="#FF8B04" />
     <Text style={styles.logoutText}>Logout</Text>
   </TouchableOpacity>

@@ -49,7 +49,7 @@ const Header = () => {
       <TouchableOpacity onPress={() => router.push('/myProfile')}>
       <Image
   source={profileImageSource}
-  style={{ width: 50, height: 50, borderRadius: 25 }}
+  style={styles.profileImage}
   onError={(e) => console.error('Image loading error:', e.nativeEvent.error)}
 />
 

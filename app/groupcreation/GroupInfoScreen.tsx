@@ -1,8 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, router } from 'expo-router';
 
 const GroupInfoScreen = () => {
+    const { groupId } = useLocalSearchParams(); 
+  
   // Options Data
   const options = [
     { name: "Members", icon: "people-outline", screen: "MembersScreen" },

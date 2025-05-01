@@ -1,13 +1,135 @@
 import Post from '@/components/GroupPost';
-import Header from '@/components/Header';
-import React, { useState } from 'react';
-import {Link, router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import GroupOptionsModal from './Modal/GroupOptionsModal';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, router } from 'expo-router';
+import { API_URL } from '@/config';
+import GroupSkeletonLoader from '@/components/GroupSkeletonLoader';
+import ChnageGroupCoverPhotoModal from './Modal/ChnageGroupCoverPhotoModal';
 
+interface PostData {
+  _id: string;
+  caption: string;
+  images: string[];
+  createdAt: string;
+  likes:string[];
+  shares:string[];
+  comments:string[];
+  userId: {
+    _id: string;
+    email: string;
+  };
+}
+interface UserData {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  profilePic: string;
+}
 const GroupScreen = () => {
     const [modalVisible, setModalVisible] = useState(false);
+    const [modalVisible2, setModalVisible2] = useState(false);
+    const { groupId } = useLocalSearchParams(); 
+    const [groupData, setGroupData] = useState<any>(null);
+    const [user, setUser] = useState<any>(null);
+
+    const [posts, setPosts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      const fetchGroupData = async () => {
+        try {
+          const response = await fetch(`${API_URL}/api/pages/${groupId}`);
+          const data = await response.json();
+          if (data.success) {
+            setGroupData(data.page);
+          } else {
+            console.log('Page not found');
+          }
+        } catch (error) {
+          console.error('Error fetching group data:', error);
+        }
+      };
+    
+      if (groupId) {
+        fetchGroupData();
+      }
+    }, [groupId]);
+
+    const formatNumber = (num: number): string => {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
+    };
+    const formatPostDate = (dateString: string) => {
+      const postDate = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
+    
+      if (diffInSeconds < 60) {
+        return 'Just added';
+      }
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes} min ago`;
+      }
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) {
+        return `${diffInHours} hr${diffInHours > 1 ? 's' : ''} ago`;
+      }
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) {
+        return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+      }
+    
+      // If more than 7 days, show full date
+      const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+      return postDate.toLocaleDateString(undefined, options); 
+    };
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/groupPosts/page/${groupId}`);
+        const json = await response.json();
+    
+        if (!json.success || !Array.isArray(json.data)) {
+          throw new Error('Invalid data format from API');
+        }
+    
+        const postsData: PostData[] = json.data;
+    
+        const postsWithUserData = await Promise.all(
+          postsData.map(async (post) => {
+            const userResponse = await fetch(`${API_URL}/api/users/${post.userId}`);
+            const userData: UserData = await userResponse.json();
+    
+            return {
+              ...post,
+              profileName: `${userData.firstName} ${userData.lastName}`,
+              profileImage: userData.profilePic
+                ? { uri: `${API_URL}/uploads/${userData.profilePic}` }
+                : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' },
+              postImages: post.images.map(img => ({ uri: `${API_URL}/uploads/postImages/${img}` })),
+              postDate: formatPostDate(post.createdAt),
+              likeCount: post.likes?.length || 0,
+              commentCount: post.comments?.length || 0,
+              shareCount: post.shares?.length || 0,
+            };
+          })
+        );
+    
+        setPosts(postsWithUserData);
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    useEffect(() => {
+        fetchPosts();
+      }, []);
+    
     const handleLike = () => {
         console.log('Liked!');
       };
@@ -23,102 +145,23 @@ const GroupScreen = () => {
       const handleSend = () => {
         console.log('Sent!');
       };
-    const posts = [
-        {
-          profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-          profileName: 'John Doe',
-          postImage: require('../../assets/images/LinkedIn-Post1.jpg'),
-          postText: 'Teamwork combines unique skills and perspectives, creating results greater than the sum of individual efforts. Effective teamwork drives innovation, enhances problem-solving, and boosts productivity. It builds a culture of support and accountability, where challenges are tackled together and successes are shared. True teamwork relies on communication, trust, and a shared vision, fostering an environment where everyone thrives',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-          profileName: 'Jane Smith',
-          postImage: require('../../assets/images/LinkedIn-Post2.jpg'),
-          postText: 'Discover the latest trends and strategies in online business. Learn from industry experts, gain valuable insights, and find out how to grow your business effectively. Whether you are experienced or just starting out, this webinar offers practical tips and tools for success. Do not miss this opportunity to network and enhance your online business skills.',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture3.jpg'),
-          profileName: 'Alice Johnson',
-          postImage: require('../../assets/images/LinkedIn-Post3.jpg'),
-          postText: 'This is the content of post 3',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture4.jpg'),
-          profileName: 'Gary Vaynerchuk',
-          postImage: require('../../assets/images/LinkedIn-Post5.jpg'),
-          postText: '',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture5.jpg'),
-          profileName: 'Charlie Davis',
-          postImage: require('../../assets/images/LinkedIn-Post4.jpg'),
-          postText: 'This is the content of post 5',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-          profileName: 'John Doe',
-          postImage: require('../../assets/images/LinkedIn-Post1.jpg'),
-          postText: 'Teamwork combines unique skills and perspectives, creating results greater than the sum of individual efforts. Effective teamwork drives innovation, enhances problem-solving, and boosts productivity. It builds a culture of support and accountability, where challenges are tackled together and successes are shared. True teamwork relies on communication, trust, and a shared vision, fostering an environment where everyone thrives',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-          profileName: 'Jane Smith',
-          postImage: require('../../assets/images/LinkedIn-Post2.jpg'),
-          postText: 'Discover the latest trends and strategies in online business. Learn from industry experts, gain valuable insights, and find out how to grow your business effectively. Whether you are experienced or just starting out, this webinar offers practical tips and tools for success. Do not miss this opportunity to network and enhance your online business skills.',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture3.jpg'),
-          profileName: 'Alice Johnson',
-          postImage: require('../../assets/images/LinkedIn-Post3.jpg'),
-          postText: 'This is the content of post 3',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture4.jpg'),
-          profileName: 'Gary Vaynerchuk',
-          postImage: require('../../assets/images/LinkedIn-Post5.jpg'),
-          postText: '',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture5.jpg'),
-          profileName: 'Charlie Davis',
-          postImage: require('../../assets/images/LinkedIn-Post4.jpg'),
-          postText: 'This is the content of post 5',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-          profileName: 'John Doe',
-          postImage: require('../../assets/images/LinkedIn-Post1.jpg'),
-          postText: 'Teamwork combines unique skills and perspectives, creating results greater than the sum of individual efforts. Effective teamwork drives innovation, enhances problem-solving, and boosts productivity. It builds a culture of support and accountability, where challenges are tackled together and successes are shared. True teamwork relies on communication, trust, and a shared vision, fostering an environment where everyone thrives',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-          profileName: 'Jane Smith',
-          postImage: require('../../assets/images/LinkedIn-Post2.jpg'),
-          postText: 'Discover the latest trends and strategies in online business. Learn from industry experts, gain valuable insights, and find out how to grow your business effectively. Whether you are experienced or just starting out, this webinar offers practical tips and tools for success. Do not miss this opportunity to network and enhance your online business skills.',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture3.jpg'),
-          profileName: 'Alice Johnson',
-          postImage: require('../../assets/images/LinkedIn-Post3.jpg'),
-          postText: 'This is the content of post 3',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture4.jpg'),
-          profileName: 'Gary Vaynerchuk',
-          postImage: require('../../assets/images/LinkedIn-Post5.jpg'),
-          postText: '',
-        },
-        {
-          profileImage: require('../../assets/images/Profile-Picture5.jpg'),
-          profileName: 'Charlie Davis',
-          postImage: require('../../assets/images/LinkedIn-Post4.jpg'),
-          postText: 'This is the content of post 5',
-        },
-      ];
+      const coverImageSource = groupData?.groupCoverImage
+      ? { uri: `${API_URL}/uploads/groupCoverPics/${groupData.groupCoverImage}` }
+      : { uri: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqrHGTJmmEhKGi4hX0cvzXTrK_x2mO257ST0jsmyuvjpUEvH7Ctt0BIB6xJpIb603rdEo&usqp=CAU' };
+
+      const profileImageSource = groupData?.groupProfilePic
+          ? { uri: `${API_URL}/uploads/groupProfilePics/${groupData.groupProfilePic}` }
+          : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' };
+          
+        
   return (
+    <>
+     {(!groupData) ? (
+      <GroupSkeletonLoader />
+    ) : (    
     <View style={styles.container}>
         <View style={styles.header}>
-        <Text style={styles.headerTitle}>Colabify</Text>
+        <Text style={styles.headerTitle}>{groupData?.name}</Text>
         <View style={styles.headerIcons}>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
             <Ionicons name="ellipsis-horizontal" size={24} color="#000" />
@@ -134,8 +177,11 @@ const GroupScreen = () => {
     <ScrollView contentContainerStyle={styles.scrollView}>
       {/* Group Image Section */}
       <View style={styles.groupImageContainer}>
-        <Image source={require('../../assets/images/Company08.jpg')} style={styles.groupImage} />
-        <TouchableOpacity style={styles.editIcon}>
+      <Image
+  source={coverImageSource}
+  style={styles.groupImage}
+/>
+        <TouchableOpacity style={styles.editIcon} onPress={() => setModalVisible2(true)}>
           <Ionicons name="camera" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -143,16 +189,19 @@ const GroupScreen = () => {
       {/* Group Details */}
       <View style={styles.groupDetails}>
       <TouchableOpacity onPress={() => router.push('/groupcreation/GroupInfoScreen')}>
-        <Text style={styles.groupName}>Colabify</Text>
+        <Text style={styles.groupName}>{groupData.name}</Text>
         <View style={styles.groupInfo}>
           <Ionicons name="earth" size={18} color="#888" />
-          <Text style={styles.infoText}> Public Group · 5.3K Members</Text>
+          <Text style={styles.infoText}> {groupData.privacy} Group · {formatNumber(groupData.members.length)} Members</Text>
         </View>
       </TouchableOpacity>
 
         {/* Invite Section */}
         <View style={styles.inviteSection}>
-          <Image source={require('../../assets/images/Company02.jpg')} style={styles.profileImage} />
+        <Image
+  source={profileImageSource}
+  style={styles.profileImage}
+/>
           <TouchableOpacity style={styles.inviteButton}>
             <Ionicons name="person-add-outline" size={18} color="#fff" />
             <Text style={styles.inviteText}>Invite</Text>
@@ -160,7 +209,7 @@ const GroupScreen = () => {
         </View>
 
         {/* Manage Button */}
-        <TouchableOpacity style={styles.manageButton} onPress={() => router.push('/groupcreation/SettingsScreen')}>
+        <TouchableOpacity style={styles.manageButton} onPress={() => router.push({ pathname: '/groupcreation/SettingsScreen', params: { groupId } })}> 
           <Text style={styles.manageText}>Manage Group</Text>
         </TouchableOpacity>
       </View>
@@ -170,33 +219,52 @@ const GroupScreen = () => {
 
       {/* Post Input Section */}
       <View style={styles.postInputContainer}>
-        <Image source={require('../../assets/images/Company02.jpg')} style={styles.profileImage} />
+      <Image
+  source={profileImageSource}
+  style={styles.profileImage}
+/>
         <TextInput style={styles.input} placeholder="Write something..." />
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push({ pathname: '/groupcreation/PostScreen', params: { groupId } })}>
           <Ionicons name="image-outline" size={30} color="#FF8B04" />
         </TouchableOpacity>
       </View>
       <View style={styles.separator} />
       <View style={styles.container1}>
-        {/* <Text style={styles.title}>Home Screen</Text> */}
-        {posts.map((post, index) => (
-          <Post
-            key={index}
-            profileImage={post.profileImage}
-            profileName={post.profileName}
-            postImage={post.postImage}
-            postText={post.postText}
-            onLike={handleLike}
-            onComment={handleComment}
-            onRepost={handleRepost}
-            onSend={handleSend}
-          />
-        ))}
-    </View>
+  {posts.length === 0 ? (
+    <Image
+      source={{ uri: 'https://img.republicworld.com/rimages/1kutzil5lj0nvfsf_1596544016_16_9.jpeg' }}
+      style={styles.noPostsImage}
+      resizeMode="contain"
+    />
+  ) : (
+    posts.map((post, index) => (
+      <Post
+        key={index}
+        profileImage={post.profileImage}
+        profileName={post.profileName}
+        postImages={post.postImages}
+        postText={post.caption}
+        postDate={post.postDate}
+        onLike={handleLike}
+        onComment={handleComment}
+        onSend={handleSend}
+        likesCount={post.likeCount}
+        commentsCount={post.commentCount}
+        sharesCount={post.shareCount}
+      />
+    ))
+  )}
+</View>
+
     <GroupOptionsModal visible={modalVisible} onClose={() => setModalVisible(false)} />
 
     </ScrollView>
+
     </View>
+)}
+    <ChnageGroupCoverPhotoModal visible={modalVisible2} userId={groupId} onClose={() => setModalVisible2(false)} />
+  </>
+
   );
 };
 
@@ -333,5 +401,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     backgroundColor: '#f9f9f9',
   },
+  noPostsImage: {
+    width: '100%',
+    height: 250,
+    marginTop: 50,
+    alignSelf: 'center',
+  }
+  
 });
 

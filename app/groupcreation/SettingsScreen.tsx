@@ -1,21 +1,22 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {Link, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 
 const SettingsScreen = () => {
+    const { groupId } = useLocalSearchParams(); 
+  
   return (
     <View style={styles.container}>
       {/* Settings Heading */}
       <Text style={styles.heading}>Settings</Text>
-
       {/* Your Settings Section */}
       <Text style={styles.subHeading}>Your Settings</Text>
-      <TouchableOpacity style={styles.option} onPress={() => router.push('/groupcreation/GroupSettingsScreen')}>
+      <TouchableOpacity style={styles.option} onPress={() => router.push({ pathname: '/groupcreation/GroupSettingsScreen', params: { groupId } })}>
         <Ionicons name="settings-outline" size={24} color="black" />
         <Text style={styles.optionText}>Group Settings</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.option} onPress={() => router.push('/groupcreation/GroupInfoScreen')}>
+      <TouchableOpacity style={styles.option} onPress={() => router.push({ pathname: '/groupcreation/GroupInfoScreen', params: { groupId } })}>
         <Ionicons name="information-circle-outline" size={24} color="black" />
       <Text style={styles.optionText}>Group Info</Text>
       </TouchableOpacity>

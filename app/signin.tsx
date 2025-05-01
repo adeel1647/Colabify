@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView,ActivityIndicator , Pressable } from 'react-native';
 import { Link, router } from 'expo-router';
 import Checkbox from 'expo-checkbox';
 import { Alert } from 'react-native';
@@ -9,21 +9,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function Signin() {
   const [agree, setAgree] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        body: JSON.stringify({ email, password }),
       });
   
       const data = await response.json();
@@ -33,14 +31,15 @@ export default function Signin() {
       } else {
         console.log('Login success:', data);
         await AsyncStorage.setItem('userData', JSON.stringify(data));
-        // Navigate to home
         router.push('/home');
       }
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Error', 'An error occurred during login');
+    } finally {
+      setIsLoading(false);
     }
-  };
+  };  
   
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -127,12 +126,18 @@ export default function Signin() {
         </View>
 
         <TouchableOpacity 
-          style={styles.button} 
-          onPress={handleLogin}
-          disabled={!agree}
-        >
-          <Text style={styles.buttonText}>Continue</Text>
-        </TouchableOpacity>
+  style={[styles.button, isLoading && { opacity: 0.6 }]} 
+  onPress={handleLogin}
+  disabled={!agree || isLoading}
+>
+  {isLoading ? (
+    <ActivityIndicator size="small" color="#fff" />
+  ) : (
+    <Text style={styles.buttonText}>Continue</Text>
+  )}
+</TouchableOpacity>
+
+
       </View>
     </ScrollView>
   );

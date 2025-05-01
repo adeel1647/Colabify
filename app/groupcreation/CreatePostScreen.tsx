@@ -1,20 +1,26 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import {Link, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 
 const CreatePostScreen = () => {
+  const { groupId } = useLocalSearchParams(); // Access the groupId passed as a parameter
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Create Post</Text>
-        <TouchableOpacity onPress={() => router.push('/groupcreation/GroupScreen')}>
+        <TouchableOpacity   onPress={() => router.push({ pathname: '/groupcreation/GroupScreen', params: { groupId } })}
+          >
           <Text style={styles.doneText}>Done</Text>
         </TouchableOpacity>
       </View>
 
       {/* Separator */}
       <View style={styles.separator} />
+
+      {/* Group ID Display */}
+      
 
       {/* Create Post Section */}
       <Text style={styles.title}>Create Post</Text>
@@ -23,9 +29,13 @@ const CreatePostScreen = () => {
       </Text>
 
       {/* Create Post Button */}
-      <TouchableOpacity style={styles.createButton} onPress={() => router.push('/groupcreation/PostScreen')}>
-        <Text style={styles.createButtonText}>Create Post</Text>
-      </TouchableOpacity>
+      <TouchableOpacity
+  style={styles.createButton}
+  onPress={() => router.push({ pathname: '/groupcreation/PostScreen', params: { groupId } })}
+>
+  <Text style={styles.createButtonText}>Create Post</Text>
+</TouchableOpacity>
+
     </View>
   );
 };
@@ -79,5 +89,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  groupIdContainer: {
+    marginVertical: 10,
+  },
+  groupIdText: {
+    fontSize: 14,
+    color: '#555',
+    fontWeight: 'bold',
   },
 });

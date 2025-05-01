@@ -66,7 +66,7 @@ export default function Analytics() {
 
                 <View style={styles.secondLine}>
                     <View style={styles.secondRow}>
-                        <Text style={styles.paragraphText}>Colabify Live</Text>
+                        <Text style={styles.paragraphText}>Collabify Live</Text>
                         <FontAwesome name="info-circle" size={20} color="grey" style={styles.icon} />
                         <Text style={styles.paragraphText1}>Learn more</Text>
                         <FontAwesome name="angle-right" size={24} color="grey" style={styles.icon} />

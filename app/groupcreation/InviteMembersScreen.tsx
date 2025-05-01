@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image } from 'react-native';
-import {Link, router } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router'; // <-- ✅ import useLocalSearchParams
 import { Ionicons } from '@expo/vector-icons';
 
 const friends = [
@@ -11,13 +11,22 @@ const friends = [
 
 const InviteMembersScreen = () => {
   const [search, setSearch] = useState('');
+  const { groupId } = useLocalSearchParams();
+  const [invitedFriends, setInvitedFriends] = useState({});
+
+  const handleInvite = (friendId) => {
+    setInvitedFriends((prevState) => ({
+      ...prevState,
+      [friendId]: !prevState[friendId], // Toggle the invited state for the friend
+    }));
+  };
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Invite Members</Text>
-        <TouchableOpacity onPress={() => router.push('/groupcreation/AddDescriptionScreen')}>
+        <TouchableOpacity onPress={() => router.push({ pathname: '/groupcreation/CreatePostScreen', params: { groupId } })}>          
           <Text style={styles.doneText}>Done</Text>
         </TouchableOpacity>
       </View>
@@ -30,6 +39,7 @@ const InviteMembersScreen = () => {
       <Text style={styles.groupCreatedText}>
         Bring like-minded people together by inviting friends to your group.
       </Text>
+      
 
       {/* Share Group */}
       <TouchableOpacity style={styles.shareGroup}>
@@ -56,8 +66,16 @@ const InviteMembersScreen = () => {
           <View style={styles.friendItem}>
             <Image source={item.image} style={styles.profileImage} />
             <Text style={styles.friendName}>{item.name}</Text>
-            <TouchableOpacity style={styles.inviteButton}>
-              <Text style={styles.inviteText}>Invite</Text>
+            <TouchableOpacity
+              style={[
+                styles.inviteButton,
+                invitedFriends[item.id] && styles.invitedButton, // Change style if invited
+              ]}
+              onPress={() => handleInvite(item.id)}
+            >
+              <Text style={styles.inviteText}>
+                {invitedFriends[item.id] ? 'Invited' : 'Invite'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -152,6 +170,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 6,
+  },
+  invitedButton: {
+    backgroundColor: '#A0A0A0', // Change color for invited
   },
   inviteText: {
     color: '#fff',

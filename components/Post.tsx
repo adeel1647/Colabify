@@ -1,29 +1,27 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions, FlatList } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useState } from 'react';
 
 interface PostProps {
   profileImage: any;
   profileName: string;
-  postImage: any;
+  postImages: any[];  // ➡️ changed from single postImage to multiple
   postText: string;
   postDate: string;
   onLike: () => void;
   onComment: () => void;
   onSend: () => void;
-  likesCount: number;    // ➡️ new
-  commentsCount: number; // ➡️ new
-  sharesCount: number;   // ➡️ new
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
 }
-
 
 const { width } = Dimensions.get('window');
 
 const Post: React.FC<PostProps> = ({
   profileImage,
   profileName,
-  postImage,
+  postImages,
   postText,
   postDate,
   onLike,
@@ -38,6 +36,54 @@ const Post: React.FC<PostProps> = ({
   const toggleText = () => {
     setShowFullText(!showFullText);
   };
+
+  const renderImages = () => {
+    const imagesToShow = postImages.slice(0, 4);
+  
+    if (postImages.length === 1) {
+      return (
+        <Image source={imagesToShow[0]} style={styles.singleImage} />
+      );
+    } else if (postImages.length === 2) {
+      return (
+        <View style={styles.row}>
+          {imagesToShow.map((img, index) => (
+            <Image key={index} source={img} style={styles.halfImage} />
+          ))}
+        </View>
+      );
+    } else if (postImages.length === 3) {
+      return (
+        <View style={styles.column}>
+          <View style={styles.row}>
+            <Image source={imagesToShow[0]} style={styles.halfImage} />
+            <Image source={imagesToShow[1]} style={styles.halfImage} />
+          </View>
+          <Image source={imagesToShow[2]} style={styles.fullImageBelow} />
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.column}>
+          <View style={styles.row}>
+            <Image source={imagesToShow[0]} style={styles.halfImage} />
+            <Image source={imagesToShow[1]} style={styles.halfImage} />
+          </View>
+          <View style={styles.row}>
+            <Image source={imagesToShow[2]} style={styles.halfImage} />
+            <View style={{ position: 'relative' }}>
+              <Image source={imagesToShow[3]} style={styles.halfImage} />
+              {postImages.length > 4 && (
+                <View style={styles.overlay}>
+                  <Text style={styles.overlayText}>+{postImages.length - 4}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+      );
+    }
+  };  
 
   return (
     <View style={styles.postContainer}>
@@ -68,7 +114,8 @@ const Post: React.FC<PostProps> = ({
         </TouchableOpacity>
       )}
 
-      <Image source={postImage} style={styles.postImage} />
+{postImages.length > 0 && renderImages()}
+
       <View style={styles.separator} />
 
       <View style={styles.iconsContainer}>
@@ -79,15 +126,14 @@ const Post: React.FC<PostProps> = ({
 
         <TouchableOpacity onPress={onComment} style={styles.iconButton}>
           <FontAwesome name="comment" size={21} color="grey" />
-          <Text style={styles.iconLabel}>Comment ({commentsCount})</Text> 
+          <Text style={styles.iconLabel}>Comment ({commentsCount})</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onSend} style={styles.iconButton}>
           <FontAwesome name="send" size={21} color="grey" />
-          <Text style={styles.iconLabel}>Share ({sharesCount})</Text> 
+          <Text style={styles.iconLabel}>Share ({sharesCount})</Text>
         </TouchableOpacity>
       </View>
-
     </View>
   );
 };
@@ -136,12 +182,6 @@ const styles = StyleSheet.create({
   followButtonText: {
     color: '#fff',
   },
-  postImage: {
-    width: '100%',
-    height: width - 40,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
   postText: {
     fontSize: 13,
     marginBottom: 5,
@@ -150,6 +190,58 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FF8B04',
     marginBottom: 10,
+  },
+  singleImage: {
+    width: '100%',
+    height: width - 40,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  column: {
+    marginTop: 10,
+  },
+  halfImage: {
+    width: (width - 30) / 2.1,
+    height: (width - 30) / 2.1,
+    borderRadius: 10,
+    marginRight: 5,
+  },
+  fullImageBelow: {
+    width: '100%',
+    height: (width - 30) / 2,
+    borderRadius: 10,
+    marginTop: 5,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 10,
+  },
+  gridItem: {
+    width: (width - 30) / 2,
+    height: (width - 30) / 2,
+    margin: 2,
+  },
+  gridImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  overlayText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   separator: {
     height: 1,

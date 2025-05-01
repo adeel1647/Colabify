@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -15,18 +15,15 @@ export default function Signup() {
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderModal, setShowGenderModal] = useState(false);
+  const [loading, setLoading] = useState(false); // <-- New state
 
   const handleChange = (field, value) => {
     if (field === 'firstName' || field === 'lastName') {
-      // Remove spaces
       value = value.replace(/\s/g, '');
     }
-
     if (field === 'phoneNumber') {
-      // Allow only numbers
       value = value.replace(/[^0-9]/g, '');
     }
-
     setFormData({ ...formData, [field]: value });
   };
 
@@ -45,10 +42,15 @@ export default function Signup() {
       return;
     }
 
-    router.push({
-      pathname: '/signupPassword',
-      params: { ...formData },
-    });
+    setLoading(true); // Start loading
+
+    setTimeout(() => {
+      setLoading(false); // Stop loading before navigating
+      router.push({
+        pathname: '/signupPassword',
+        params: { ...formData },
+      });
+    }, 1500); // Simulate a short loading (1.5 seconds), you can adjust or remove timeout if not needed
   };
 
   const handleSelectGender = (gender) => {
@@ -145,24 +147,26 @@ export default function Signup() {
       {/* Gender Modal */}
       <Modal visible={showGenderModal} transparent animationType="fade">
         <View style={styles.modalBackground}>
-        <View style={styles.modalContainer}>
-  {['Male', 'Female', 'Other'].map((g, index, array) => (
-    <View key={g} style={{ width: '100%' }}>
-      <Pressable onPress={() => handleSelectGender(g)} style={styles.genderOption}>
-        <Text style={styles.genderText}>{g}</Text>
-      </Pressable>
-
-      {/* Show separator except after the last item */}
-      {index < array.length - 1 && <View style={styles.separator} />}
-    </View>
-  ))}
-</View>
-
+          <View style={styles.modalContainer}>
+            {['Male', 'Female', 'Other'].map((g, index, array) => (
+              <View key={g} style={{ width: '100%' }}>
+                <Pressable onPress={() => handleSelectGender(g)} style={styles.genderOption}>
+                  <Text style={styles.genderText}>{g}</Text>
+                </Pressable>
+                {index < array.length - 1 && <View style={styles.separator} />}
+              </View>
+            ))}
+          </View>
         </View>
       </Modal>
 
-      <TouchableOpacity style={styles.button} onPress={handleContinue}>
-        <Text style={styles.buttonText}>Continue</Text>
+      {/* Button with ActivityIndicator */}
+      <TouchableOpacity style={styles.button} onPress={handleContinue} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Continue</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -217,6 +221,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderRadius: 25,
     marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   buttonText: {
     color: '#fff',
@@ -248,5 +254,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
     width: '100%',
   },
-  
 });

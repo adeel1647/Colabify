@@ -2,6 +2,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { API_URL } from '@/config';
 
 interface JobAlertProps {
   pageImage: any;
@@ -18,7 +19,17 @@ const JobAlert: React.FC<JobAlertProps> = ({ pageImage, pageName, description, p
       <View style={styles.textContainer}>
         <Text style={styles.pageName}>{pageName}</Text>
         <Text style={styles.description}>{description}</Text>
-        <Text style={styles.pageDescription}>{pageDescription}</Text>
+        <View style={styles.privacyContainer}>
+  <FontAwesome
+    name={pageDescription === 'Public' ? 'globe' : 'lock'}
+    size={14}
+    color="#FFA238"
+    style={styles.privacyIcon}
+  />
+  <Text style={styles.privacyText}>
+    {pageDescription === 'Public' ? 'Public' : 'Private'}
+  </Text>
+</View>
       </View>
     </View>
   );
@@ -63,6 +74,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#8a8a8a',
   },
+  privacyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+  },
+  
+  privacyIcon: {
+    marginRight: 5,
+  },
+  
+  privacyText: {
+    fontSize: 12,
+    color: '#8a8a8a',
+  },
+  
 });
 
 export default JobAlert;

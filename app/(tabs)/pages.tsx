@@ -1,13 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TextInput, Image, TouchableOpacity } from 'react-native';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons'; // Import icons
 import JobAlert from '../../components/JobAlert';
 import NetworkCard from '@/components/NetworkCard';
-import {Link, router } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router'; // <-- ✅ import useLocalSearchParams
 import Header from '@/components/Header';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/config';
+import JobScreenLoadingSkeleton from '@/components/JobScreenLoadingSkeleton';
 
+interface UserGroup {
+  _id: string;
+  name: string;
+  description: string;
+  privacy: string;
+  groupProfilePic: string;
+  createdAt: string;
+}
 export default function JobScreen() {
+  const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('Your Pages'); // Track selected tab
+  const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    };
+  
+    fetchUserData();
+  }, []);
+  
+  useEffect(() => {
+    const fetchUserGroups = async () => {
+      if (!user) return;
+      try {
+        setLoading(true); // Start loading
+        const response = await fetch(`${API_URL}/api/pages/user/${user._id}`);
+        const data = await response.json();
+  
+        if (data.success && Array.isArray(data.pages)) {
+          setUserGroups(data.pages);
+        } else {
+          setUserGroups([]);
+        }
+      } catch (error) {
+        console.error('Error fetching user groups:', error);
+        setUserGroups([]);
+      } finally {
+        setLoading(false); // Stop loading
+      }
+    };
+  
+    fetchUserGroups();
+  }, [user]);
+  
   const handleClose = () => {
     console.log('Job alert closed');
   };
@@ -19,7 +74,7 @@ export default function JobScreen() {
     { pageImage: require('../../assets/images/Company09.jpg'), pageName: 'Senior Software Engineer, (GO and Node)', description: 'RootCode Lab', pageDescription: 'Job description for company four' },
   ];
   const yourGroups = [
-       { pageImage: require('../../assets/images/favicon.png'), pageName: 'Colabify', description: 'RootCode Lab', pageDescription: 'Job description for company four' },
+       { pageImage: require('../../assets/images/favicon.png'), pageName: 'Collabify', description: 'RootCode Lab', pageDescription: 'Job description for company four' },
   ];
   const networkCards = [
     {
@@ -96,48 +151,64 @@ export default function JobScreen() {
   
       {/* Content Section */}
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-
+      {loading ? (
+      <JobScreenLoadingSkeleton />
+    ) : (
+      <>
       {activeTab === 'Your Pages' && (
   <>
-    {/* Groups You Manage Section */}
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionHeading}>Groups You Manage</Text>
-      <TouchableOpacity onPress={() => router.push('/groupcreation/CreateGroupScreen')}>        
-        <Text style={styles.createLink}>Create</Text>
+  {/* Pages You Manage Section */}
+  <View style={styles.sectionHeader}>
+    <Text style={styles.sectionHeading}>Pages You Manage</Text>
+    <TouchableOpacity onPress={() => router.push('/groupcreation/CreateGroupScreen')}>        
+      <Text style={styles.createLink}>Create</Text>
+    </TouchableOpacity>
+  </View>
+
+  {userGroups.length === 0 ? (
+    <>
+      <Text style={styles.infoText}>
+        Become an admin or moderator of a page to see it listed here...
+      </Text>
+      
+      <TouchableOpacity 
+        style={styles.createGroupButton} 
+        onPress={() => router.push('/groupcreation/CreateGroupScreen')}
+      >
+        <Text style={styles.createGroupButtonText}>Create Page</Text>
       </TouchableOpacity>
-    </View>
-    
-    <Text style={styles.infoText}>Become an admin or moderator of a group to see it listed here...</Text>
-    
-    <TouchableOpacity style={styles.createGroupButton} onPress={() => router.push('/groupcreation/CreateGroupScreen')}>
-      <Text style={styles.createGroupButtonText}>Create Group</Text>
-    </TouchableOpacity>
-    {
-  yourGroups.map((alert, index) => (
-    <TouchableOpacity 
-      key={index} 
-      onPress={() => router.push('/groupcreation/GroupScreen')}
-    >
-      <JobAlert
-        pageImage={alert.pageImage}
-        pageName={alert.pageName}
-        description={alert.description}
-        pageDescription={alert.pageDescription}
-        onClose={handleClose}
-      />
-    </TouchableOpacity>
-  ))
-}
+    </>
+  ) : (
+    userGroups.map((group, index) => (
+      <TouchableOpacity 
+        key={index} 
+       onPress={() => router.push({ pathname: '/groupcreation/GroupScreen', params: { groupId: group._id }  })}
+      >
+        <JobAlert
+          pageImage={{ uri: `${API_URL}/uploads/groupProfilePics/${group.groupProfilePic}` }}
+          pageName={group.name}
+          description={group.description}
+          pageDescription={group.privacy}
+          onClose={handleClose}
+        />
+      </TouchableOpacity>
+    ))
+  )}
 
-    {/* Separator Line */}
-    <View style={styles.separatorLine} />
-    
+  {/* Separator Line */}
+  <View style={styles.separatorLine} />
 
-    {/* Your Following Section */}
-    <Text style={styles.sectionHeading}>Your Following</Text>
-  </>
+  {/* Your Following Section */}
+  <Text style={styles.sectionHeading}>Your Following</Text>
+</>
+
 )}
-
+</>
+    )}
+    {loading ? (
+      <JobScreenLoadingSkeleton />
+    ) : (
+      <>
 
   {activeTab === 'Your Pages' ? (
     jobAlerts.map((alert, index) => (
@@ -168,6 +239,8 @@ export default function JobScreen() {
     </View>
   </View>
   )}
+  </>
+    )}
 
 </ScrollView>
 

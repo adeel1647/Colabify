@@ -12,10 +12,10 @@ export default function FirstPage() {
 
       <View style={styles.bottomContainer}>
       <Text style={styles.paragraph}>
-        By clicking Agree & Join or Continue,you agree to the Colabify User Agreement, Privacy Policy, and Cookie Policy
+        By clicking Agree & Join or Continue,you agree to the Collabify User Agreement, Privacy Policy, and Cookie Policy
       </Text>
       
-      <TouchableOpacity style={styles.button1} onPress={() => router.push('/home')}>
+      <TouchableOpacity style={styles.button1} onPress={() => router.push('/signup')}>
         <Text style={styles.buttonText1}>Agree & Join</Text>
       </TouchableOpacity>
       

@@ -5,75 +5,75 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system'; // Required for converting image to form data
 import { API_URL } from '@/config';
 
-const ChnageProfilePhotoModal = ({ visible, onClose, userId }) => {
+const ChnageGroupCoverPhotoModal = ({ visible, onClose, userId }) => {
   
   // Function to open the camera
   const openCamera = async () => {
-      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permissionResult.granted) {
-        Alert.alert("Permission Denied", "You need to allow camera access to take a photo.");
-        return;
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission Denied", "You need to allow camera access to take a photo.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 1 });
+    if (!result.canceled) {
+      console.log("Photo Taken:", result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      await uploadImage(uri);
+    }
+  };
+
+  // Function to open the gallery
+  const openGallery = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission Denied", "You need to allow gallery access to upload a photo.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 1 });
+    if (!result.canceled) {
+      console.log("Photo Selected:", result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      await uploadImage(uri);
+    }
+  };
+
+  // Function to upload the image to the server
+  const uploadImage = async (uri) => {
+    try {
+      const formData = new FormData();
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      
+      // Prepare file to be uploaded
+      const file = {
+        uri: fileInfo.uri,
+        name: fileInfo.uri.split('/').pop(),
+        type: 'image/jpeg', // or the appropriate file type
+      };
+      
+      formData.append('groupCoverImage', file);
+
+      // Send the request using fetch
+      const response = await fetch(`${API_URL}/api/pages/${userId}/cover-photo`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', 'Cover photo updated successfully!');
+        console.log(data);
+      } else {
+        Alert.alert('Error', data.message || 'Failed to update cover photo');
       }
-      const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 1 });
-      if (!result.canceled) {
-        console.log("Photo Taken:", result.assets[0].uri);
-        const uri = result.assets[0].uri;
-        await uploadImage(uri);
-      }
-    };
-  
-    // Function to open the gallery
-    const openGallery = async () => {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissionResult.granted) {
-        Alert.alert("Permission Denied", "You need to allow gallery access to upload a photo.");
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 1 });
-      if (!result.canceled) {
-        console.log("Photo Selected:", result.assets[0].uri);
-        const uri = result.assets[0].uri;
-        await uploadImage(uri);
-      }
-    };
-  
-    // Function to upload the image to the server
-    const uploadImage = async (uri) => {
-      try {
-        const formData = new FormData();
-        const fileInfo = await FileSystem.getInfoAsync(uri);
-        
-        // Prepare file to be uploaded
-        const file = {
-          uri: fileInfo.uri,
-          name: fileInfo.uri.split('/').pop(),
-          type: 'image/jpeg', // or the appropriate file type
-        };
-        
-        formData.append('profilePic', file);
-  
-        // Send the request using fetch
-        const response = await fetch(`${API_URL}/api/users/${userId}/profile`, {
-          method: 'PUT',
-          body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-  
-        const data = await response.json();
-  
-        if (response.ok) {
-          Alert.alert('Success', 'Profile photo updated successfully!');
-          console.log(data);
-        } else {
-          Alert.alert('Error', data.message || 'Failed to update Profile photo');
-        }
-      } catch (error) { 
-        Alert.alert('Error', 'Failed to update Profile photo');
-        console.error(error);
-      }
-    };
+    } catch (error) { 
+      Alert.alert('Error', 'Failed to update cover photo');
+      console.error(error);
+    }
+  };
 
   return (
     <Modal
@@ -100,7 +100,7 @@ const ChnageProfilePhotoModal = ({ visible, onClose, userId }) => {
                 <View style={[styles.iconContainer, { backgroundColor: 'lightgray' }]}>
                   <Ionicons name="image-outline" size={20} color="black" />
                 </View>
-                <Text style={styles.optionText}>Upload Photo</Text>
+                <Text style={styles.optionText}>Upload Cover Photo</Text>
               </TouchableOpacity>
              
               {/* See Cover Photo (No Action) */}
@@ -108,7 +108,7 @@ const ChnageProfilePhotoModal = ({ visible, onClose, userId }) => {
                 <View style={[styles.iconContainer, { backgroundColor: 'lightgray' }]}>
                   <Ionicons name="eye-outline" size={20} color="black" />
                 </View>
-                <Text style={styles.optionText}>See Profie Photo</Text>
+                <Text style={styles.optionText}>See Cover Photo</Text>
               </TouchableOpacity>
 
             </View>
@@ -160,4 +160,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChnageProfilePhotoModal;
+export default ChnageGroupCoverPhotoModal;

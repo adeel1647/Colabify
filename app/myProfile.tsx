@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/config';
 import ChnageProfilePhotoModal from './groupcreation/Modal/ChnageProfilePhotoModal';
 import ChangeCoverPhotoModal from './groupcreation/Modal/ChnageCoverPhotoModal';
+import PostLoadingSkeleton from '@/components/PostLoadingSkeleton';
+import ProfileLoadingSkeleton from '@/components/ProfileLoadingSkeleton';
 
 interface PostData {
   _id: string;
@@ -83,7 +85,7 @@ const MyProfile: React.FC = () => {
           profileImage: user.profilePic
             ? { uri: `${API_URL}/uploads/${user.profilePic}` }
             : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' },
-          postImage: { uri: `${API_URL}/uploads/postImages/${post.images[0]}` },
+          postImages: post.images.map(img => ({ uri: `${API_URL}/uploads/postImages/${img}` })),
           postDate: formatPostDate(post.createdAt),
           likeCount: post.likes ? post.likes.length : 0,
           commentCount: post.comments ? post.comments.length : 0,
@@ -145,10 +147,6 @@ const MyProfile: React.FC = () => {
       console.log('Commented!');
     };
   
-    const handleRepost = () => {
-      console.log('Reposted!');
-    };
-  
     const handleSend = () => {
       console.log('Sent!');
     };
@@ -163,12 +161,6 @@ const MyProfile: React.FC = () => {
         return `${Math.floor(connections / 100) * 100}+ connections`;
       }
     };
-    
-
-
-    if (loading) {
-      return <Text>Loading...</Text>;
-    }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -179,7 +171,16 @@ const MyProfile: React.FC = () => {
         </TouchableOpacity>
         <TextInput style={styles.searchBar} placeholder="Search" />       
       </View>
-
+      
+      {loading || !user ? (  // 👈 Show skeleton if loading or user not ready
+      <>
+        <ProfileLoadingSkeleton />
+        <PostLoadingSkeleton />
+        <PostLoadingSkeleton />
+        <PostLoadingSkeleton />
+      </>
+    ) : (
+      <>
       {/* Background Image and Profile Section */}
       <View style={styles.backgroundContainer}>
         <Image source={coverprofileImageSource} style={styles.backgroundImage} />
@@ -230,27 +231,28 @@ const MyProfile: React.FC = () => {
                  </View>
                  <View style={styles.separator} />
       <View style={styles.container1}>
-        {/* <Text style={styles.title}>Home Screen</Text> */}
-        {posts.map((post, index) => (
-          <Post
-          key={index}
-          profileImage={post.profileImage}
-          profileName={post.profileName}
-          postImage={post.postImage}
-          postText={post.caption}
-          postDate={post.postDate}
-          onLike={handleLike}
-          onComment={handleComment}
-          onSend={handleSend}
-          likesCount={post.likeCount}       
-          commentsCount={post.commentCount}
-          sharesCount={post.shareCount}   
 
-        />
-        ))}
+      {posts.map((post, index) => (
+            <Post
+              key={index}
+              profileImage={post.profileImage}
+              profileName={post.profileName}
+              postImages={post.postImages}
+              postText={post.caption}
+              postDate={post.postDate}
+              onLike={handleLike}
+              onComment={handleComment}
+              onSend={handleSend}
+              likesCount={post.likeCount}
+              commentsCount={post.commentCount}
+              sharesCount={post.shareCount}
+            />
+          ))}
     </View>
       <ChangeCoverPhotoModal visible={modalVisible} userId={user?._id} onClose={() => setModalVisible(false)} />
-      <ChnageProfilePhotoModal visible={modalVisible2} onClose={() => setModalVisible2(false)} />
+      <ChnageProfilePhotoModal visible={modalVisible2} userId={user?._id} onClose={() => setModalVisible2(false)} />
+      </>
+    )}
     </ScrollView>
   );
 };
@@ -377,6 +379,11 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 10,
+  },
+  scrollView: {
+    flexGrow: 1,
+    paddingVertical: 1,
+    backgroundColor: '#f0f0f0',
   },
 });
 
