@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "collabify",
+    "name": "Collabify",
     "slug": "Collabify",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,7 +29,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

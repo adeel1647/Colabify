@@ -23,7 +23,14 @@ const NetworkCard: React.FC<NetworkCardProps> = ({
     <View style={styles.card}>
       <Image source={backgroundImage} style={styles.backgroundImage} />
       <Text style={styles.profileName}>{profileName}</Text>
-      <Text style={styles.profilePosition}>{position}</Text>
+      <Text
+  style={styles.profilePosition}
+  numberOfLines={2}
+  ellipsizeMode="tail"
+>
+  {position}
+</Text>
+
       <View style={styles.mutualConnectionsContainer}>
         <Image source={require('../assets/images/Profile-Picture1.jpg')} style={styles.smallProfileImage} />
         <Text style={styles.mutualConnectionsText}>{mutualConnections}</Text>
@@ -77,6 +84,7 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'left',
     marginHorizontal:10,
+    maxWidth: '90%',
 
   },
   mutualConnectionsContainer: {
@@ -98,7 +106,7 @@ const styles = StyleSheet.create({
     
   },
   connectButton: {
-    backgroundColor: '#FFA238',
+    backgroundColor: '#FF8B04',
     borderRadius: 20,
     paddingVertical: 10,
     alignItems: 'center',

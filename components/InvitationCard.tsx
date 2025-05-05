@@ -7,29 +7,55 @@ interface InvitationCardProps {
   profileName: string;
   position: string;
   mutualConnections: string;
-  timeAgo: string;
-  onClose: () => void;
-  onAccept: () => void;
+  timeAgo: string; // this should be ISO date like "2025-05-05T14:33:04.289Z"
+  onClose: (id: string) => void;
+  onAccept: (id: string) => void;
+  id: string;
 }
 
-const InvitationCard: React.FC<InvitationCardProps> = ({ profileImage, profileName, position, mutualConnections, timeAgo, onClose, onAccept }) => {
+const formatTimeAgo = (dateString: string): string => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'Just now';
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} min${diffInMinutes > 1 ? 's' : ''} ago`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+
+  return date.toLocaleDateString(); // fallback to date
+};
+
+const InvitationCard: React.FC<InvitationCardProps> = ({
+  profileImage,
+  profileName,
+  position,
+  mutualConnections,
+  timeAgo,
+  onClose,
+  id,
+  onAccept,
+}) => {
   return (
     <View style={styles.card}>
       <Image source={profileImage} style={styles.profileImage} />
       <View style={styles.infoContainer}>
         <Text style={styles.profileName}>{profileName}</Text>
-        <Text style={styles.position}>{position}</Text>
+        <Text style={styles.position} numberOfLines={2}>{position}</Text>
         <View style={styles.row}>
           <FontAwesome name="users" size={14} color="grey" />
           <Text style={styles.mutualConnections}>{mutualConnections}</Text>
         </View>
-        <Text style={styles.timeAgo}>{timeAgo}</Text>
+        <Text style={styles.timeAgo}>{formatTimeAgo(timeAgo)}</Text>
       </View>
       <View style={styles.actions}>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity onPress={() => onClose(id)} >
           <FontAwesome name="times" size={20} color="grey" style={styles.actionIcon} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={onAccept}>
+        <TouchableOpacity onPress={() => onAccept(id)} >
           <FontAwesome name="check" size={20} color="grey" style={styles.actionIcon} />
         </TouchableOpacity>
       </View>
@@ -61,12 +87,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
   },
   position: {
-    fontSize: 14,
+    fontSize: 12,
     color: 'grey',
+    flexWrap: 'wrap',
   },
   row: {
     flexDirection: 'row',
@@ -74,12 +101,12 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   mutualConnections: {
-    fontSize: 12,
+    fontSize: 11,
     color: 'grey',
     marginLeft: 5,
   },
   timeAgo: {
-    fontSize: 12,
+    fontSize: 11,
     color: 'grey',
     marginTop: 5,
   },

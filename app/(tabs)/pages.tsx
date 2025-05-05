@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     gap: 6, // Space between icon and text
   },
   activeTab: {
-    backgroundColor: '#FFA238',
+    backgroundColor: '#FF8B04',
   },
   tabText: {
     fontSize: 16,
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   createLink: {
-    color: '#FFA238',
+    color: '#FF8B04',
     fontSize: 14,
     fontWeight: 'bold',
   },

@@ -23,7 +23,7 @@ const JobAlert: React.FC<JobAlertProps> = ({ pageImage, pageName, description, p
   <FontAwesome
     name={pageDescription === 'Public' ? 'globe' : 'lock'}
     size={14}
-    color="#FFA238"
+    color="#FF8B04"
     style={styles.privacyIcon}
   />
   <Text style={styles.privacyText}>
