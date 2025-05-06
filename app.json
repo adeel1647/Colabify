@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.team164722.Collabify"
+      "package": "com.adeel360.Collabify"
     },
     "web": {
       "bundler": "metro",
@@ -40,7 +40,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "d1512508-95b5-46da-837b-02c489d4bf4e"
+        "projectId": "867da7df-7a1e-4c11-9c6e-74d7de2443cc"
       }
     }
   }

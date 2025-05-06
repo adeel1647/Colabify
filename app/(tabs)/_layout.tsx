@@ -1,22 +1,22 @@
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
-import { Home, Users, PlusCircle, Bell, Newspaper } from 'lucide-react-native'; // Modern Lucide Icons
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#FF8B04', // Premium blue for active tab
-        tabBarInactiveTintColor: '#A0A0A0', // Soft gray for inactive tabs
+        tabBarActiveTintColor: '#FF8B04',
+        tabBarInactiveTintColor: '#A0A0A0',
         tabBarStyle: {
-          backgroundColor: '#fff', // Clean white background
+          backgroundColor: '#fff',
           borderTopWidth: 0,
           shadowColor: '#000',
           shadowOpacity: 0.08,
           shadowOffset: { width: 0, height: 2 },
           shadowRadius: 4,
-          elevation: 3, // Smooth shadow effect
-          height: 65, // Extra space for better UX
+          elevation: 3,
+          height: 65,
           paddingBottom: 10,
         },
       }}
@@ -26,9 +26,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
-            <View style={{ alignItems: 'center' }}>
-              <Home color={color} size={30} strokeWidth={2} />
-            </View>
+            <MaterialCommunityIcons name="home-outline" size={30} color={color} />
           ),
           headerShown: false,
         }}
@@ -38,9 +36,7 @@ export default function TabLayout() {
         options={{
           title: "Network",
           tabBarIcon: ({ color }) => (
-            <View style={{ alignItems: 'center' }}>
-              <Users color={color} size={30} strokeWidth={2} />
-            </View>
+            <MaterialCommunityIcons name="account-group-outline" size={30} color={color} />
           ),
           headerShown: false,
         }}
@@ -49,19 +45,31 @@ export default function TabLayout() {
         name="newpost"
         options={{
           title: "",
-          tabBarIcon: ({ color }) => (
+          tabBarIcon: () => (
             <View
               style={{
+                position: 'absolute',
+                top: -30, 
                 backgroundColor: '#FF8B04',
-                borderRadius: 50,
-                padding: 12,
-                marginBottom: 20, // Floating effect
+                borderRadius: 50, 
+                width: 65, 
+                height: 65,
+                justifyContent: 'center',
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.2,
+                shadowRadius: 12,
+                elevation: 10,
+                transform: [{ scale: 1.1 }], 
+                borderWidth: 4, 
+                borderColor: '#fff', 
+                backgroundColor: 'linear-gradient(180deg, rgba(255, 139, 4, 1) 0%, rgba(255, 150, 70, 1) 100%)', 
               }}
             >
-              <PlusCircle color="#fff" size={36} strokeWidth={2.5} />
+              <MaterialCommunityIcons name="plus" size={40} color="#fff" />
             </View>
           ),
-          tabBarActiveTintColor: 'red', // Green for Post tab
           headerShown: false,
         }}
       />
@@ -70,9 +78,7 @@ export default function TabLayout() {
         options={{
           title: "Alerts",
           tabBarIcon: ({ color }) => (
-            <View style={{ alignItems: 'center' }}>
-              <Bell color={color} size={30} strokeWidth={2} />
-            </View>
+            <MaterialCommunityIcons name="bell-outline" size={30} color={color} />
           ),
           headerShown: false,
         }}
@@ -82,9 +88,7 @@ export default function TabLayout() {
         options={{
           title: "Pages",
           tabBarIcon: ({ color }) => (
-            <View style={{ alignItems: 'center' }}>
-              <Newspaper     color={color} size={30} strokeWidth={2} />
-            </View>
+            <MaterialCommunityIcons name="file-document-multiple-outline" size={30} color={color} />
           ),
           headerShown: false,
         }}
