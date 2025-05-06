@@ -216,16 +216,16 @@ const MyProfile: React.FC = () => {
              <TouchableOpacity style={styles.manageButton} onPress={() => router.push(`/groupcreation/ProfileSettingsScreen?id=${user?._id}`)}>
                <Text style={styles.manageText}>Manage Profile</Text>
              </TouchableOpacity>
-             <TouchableOpacity style={styles.manageButton} onPress={() => router.push('/Analytics')}>
+             {/* <TouchableOpacity style={styles.manageButton} onPress={() => router.push('/Analytics')}>
                <Text style={styles.manageText}>Analytics</Text>
-             </TouchableOpacity>
+             </TouchableOpacity> */}
      
            {/* Separator */}
            <View style={styles.separator} />
            <View style={styles.postInputContainer}>
                    <Image source={profileImageSource} style={styles.profileImage1} />
                    <TextInput style={styles.input} placeholder="Write something..." />
-                   <TouchableOpacity>
+                   <TouchableOpacity onPress={() => router.push({ pathname: '/(tabs)/newpost' })}>
                      <Ionicons name="image-outline" size={30} color="#FF8B04" />
                    </TouchableOpacity>
                  </View>

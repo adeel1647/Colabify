@@ -202,7 +202,7 @@ const GroupScreen = () => {
   source={profileImageSource}
   style={styles.profileImage}
 />
-          <TouchableOpacity style={styles.inviteButton}>
+          <TouchableOpacity style={styles.inviteButton} onPress={() => router.push({ pathname: '/groupcreation/InviteMembersScreen', params: { groupId } })}>
             <Ionicons name="person-add-outline" size={18} color="#fff" />
             <Text style={styles.inviteText}>Invite</Text>
           </TouchableOpacity>

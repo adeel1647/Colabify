@@ -105,7 +105,7 @@ const CreateGroupScreen = () => {
         const groupId = data.groupId;
         console.log('Group created with ID:', groupId);
 
-        router.push({ pathname: '/groupcreation/InviteMembersScreen', params: { groupId } });
+        router.push({ pathname: '/groupcreation/CreatePostScreen', params: { groupId } });
       } else {
         alert(data.message || 'Failed to create page.');
       }

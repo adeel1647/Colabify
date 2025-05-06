@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import Header from '../../components/Header';
 import InvitationCard from '../../components/InvitationCard';
 import NetworkCard from '../../components/NetworkCard'; // Import the new NetworkCard component
@@ -151,17 +151,58 @@ const Network: React.FC = () => {
         const data = JSON.parse(text); // Try parsing it
         if (response.ok) {
           console.log('Friend request sent successfully:', data);
+          Alert.alert('Success', 'Friend request sent successfully!', [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Call your refresh function or update state here
+                refreshData(); // Replace this with your actual refresh logic
+              },
+            },
+          ]);
         } else {
           console.error('Failed to send request:', data.message);
+          Alert.alert('Error', data.message || 'Failed to send request');
         }
       } catch (parseError) {
         console.error('Response is not valid JSON:', text);
+        Alert.alert('Error', 'Response is not valid JSON');
       }
   
     } catch (error) {
       console.error('Error sending friend request:', error);
     }
   };
+  const refreshData = async () => {
+    setIsLoading(true); // optional: show loader
+    try {
+      const response = await fetch(`${API_URL}/api/users/unconnected-users/${user._id}`);
+      const data = await response.json();
+      setSuggestions(data);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      Alert.alert('Error', 'Could not refresh suggestions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const refreshInvitations = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/users/${user._id}/friends`);
+      const data = await response.json();
+      
+      // Assuming the response has a 'friends' field that contains the invitation data
+      setInvitations(data.friends || []); // Set the friends data (invitations)
+    } catch (error) {
+      console.error('Failed to fetch invitations:', error);
+      Alert.alert('Error', 'Could not refresh suggestions');
+    }
+    finally {
+      setIsLoading(false); // Set loading to false after fetching
+    }
+  };
+  
   
   const handleAcceptRequest = async (userId: string) => {
     console.log('Sender user:', userId); // sender = the one who sent the request
@@ -183,7 +224,15 @@ const Network: React.FC = () => {
   
       if (response.ok) {
         console.log('Friend request accepted:', data.message);
-        // Optionally: refresh list or update UI
+        Alert.alert('Success', 'Friend request sent successfully!', [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Call your refresh function or update state here
+              refreshInvitations(); // Replace this with your actual refresh logic
+            },
+          },
+        ]);
       } else {
         console.error('Error accepting request:', data.message);
       }

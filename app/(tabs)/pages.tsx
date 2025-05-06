@@ -39,11 +39,13 @@ export default function JobScreen() {
     fetchUserData();
   }, []);
   
+  
   useEffect(() => {
     const fetchUserGroups = async () => {
-      if (!user) return;
+      if (!user || activeTab !== 'Your Pages') return;
+  
       try {
-        setLoading(true); // Start loading
+        setLoading(true); // Show loading spinner
         const response = await fetch(`${API_URL}/api/pages/user/${user._id}`);
         const data = await response.json();
   
@@ -61,7 +63,8 @@ export default function JobScreen() {
     };
   
     fetchUserGroups();
-  }, [user]);
+  }, [user, activeTab]); // 🔁 Re-run when activeTab changes
+  
   
   const handleClose = () => {
     console.log('Job alert closed');

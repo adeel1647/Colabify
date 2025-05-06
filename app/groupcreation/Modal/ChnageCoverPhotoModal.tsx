@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system'; // Required for converting image to form data
 import { API_URL } from '@/config';
+import { router } from 'expo-router';
 
 const ChangeCoverPhotoModal = ({ visible, onClose, userId }) => {
   
@@ -64,8 +65,8 @@ const ChangeCoverPhotoModal = ({ visible, onClose, userId }) => {
       const data = await response.json();
 
       if (response.ok) {
+        router.push('/myProfile');
         Alert.alert('Success', 'Cover photo updated successfully!');
-        console.log(data);
       } else {
         Alert.alert('Error', data.message || 'Failed to update cover photo');
       }

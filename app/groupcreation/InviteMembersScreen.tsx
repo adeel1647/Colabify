@@ -1,53 +1,75 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image } from 'react-native';
 import { Link, router, useLocalSearchParams } from 'expo-router'; // <-- ✅ import useLocalSearchParams
 import { Ionicons } from '@expo/vector-icons';
-
-const friends = [
-  { id: '1', name: 'John Doe', image: require('../../assets/images/Company01.jpg') },
-  { id: '2', name: 'Jane Smith', image: require('../../assets/images/Company02.jpg') },
-  { id: '3', name: 'Michael Brown', image: require('../../assets/images/Company03.jpg') },
-];
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/config';
 
 const InviteMembersScreen = () => {
   const [search, setSearch] = useState('');
-  const { groupId } = useLocalSearchParams();
+  const [user, setUser] = useState(null);
+  const [friends, setFriends] = useState([]);  // Initialize as an empty array
   const [invitedFriends, setInvitedFriends] = useState({});
+  const { groupId } = useLocalSearchParams();
+
+  useEffect(() => {
+    const fetchUserDataAndConnections = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          const response = await fetch(`${API_URL}/api/users/${parsedUser._id}/connections`);
+          const data = await response.json();
+
+          // Ensure the API response is successful and contains the connections array
+          if (data.success) {
+            setFriends(data.connections);  // Set friends to the connections array
+          } else {
+            console.error('Failed to fetch connections:', data.message || 'Unknown error');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+
+    fetchUserDataAndConnections();
+  }, []);
 
   const handleInvite = (friendId) => {
     setInvitedFriends((prevState) => ({
       ...prevState,
-      [friendId]: !prevState[friendId], // Toggle the invited state for the friend
+      [friendId]: !prevState[friendId],
     }));
   };
 
+  // Filter friends based on the search input
+  const filteredFriends = friends.filter(friend =>
+    friend.fullName.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Invite Members</Text>
-        <TouchableOpacity onPress={() => router.push({ pathname: '/groupcreation/CreatePostScreen', params: { groupId } })}>          
+        <TouchableOpacity onPress={() => router.push({ pathname: '/groupcreation/CreatePostScreen', params: { groupId } })}>
           <Text style={styles.doneText}>Done</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Separator */}
       <View style={styles.separator} />
 
-      {/* Group Created Section */}
-      <Text style={styles.groupCreatedTitle}>Your group has been created</Text>
+      <Text style={styles.groupCreatedTitle}>Grow Your Community</Text>
       <Text style={styles.groupCreatedText}>
         Bring like-minded people together by inviting friends to your group.
       </Text>
-      
 
-      {/* Share Group */}
       <TouchableOpacity style={styles.shareGroup}>
         <Ionicons name="share-social-outline" size={24} color="#FF8B04" />
         <Text style={styles.shareText}>Share Group</Text>
       </TouchableOpacity>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -58,23 +80,22 @@ const InviteMembersScreen = () => {
         <Ionicons name="search-outline" size={24} color="#555" />
       </View>
 
-      {/* Friends List */}
       <FlatList
-        data={friends}
-        keyExtractor={(item) => item.id}
+        data={filteredFriends}
+        keyExtractor={(item) => item.userId}  // Use userId as the key
         renderItem={({ item }) => (
           <View style={styles.friendItem}>
-            <Image source={item.image} style={styles.profileImage} />
-            <Text style={styles.friendName}>{item.name}</Text>
+            <Image source={{ uri: `${API_URL}/uploads/${item.profilePic}` }} style={styles.profileImage} />
+            <Text style={styles.friendName}>{item.fullName}</Text>
             <TouchableOpacity
               style={[
                 styles.inviteButton,
-                invitedFriends[item.id] && styles.invitedButton, // Change style if invited
+                invitedFriends[item.userId] && styles.invitedButton,
               ]}
-              onPress={() => handleInvite(item.id)}
+              onPress={() => handleInvite(item.userId)}
             >
               <Text style={styles.inviteText}>
-                {invitedFriends[item.id] ? 'Invited' : 'Invite'}
+                {invitedFriends[item.userId] ? 'Invited' : 'Invite'}
               </Text>
             </TouchableOpacity>
           </View>

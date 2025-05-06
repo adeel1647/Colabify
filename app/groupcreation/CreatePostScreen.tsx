@@ -23,7 +23,7 @@ const CreatePostScreen = () => {
       
 
       {/* Create Post Section */}
-      <Text style={styles.title}>Create Post</Text>
+      <Text style={styles.title}>Your group has been created</Text>
       <Text style={styles.subtitle}>
         You can set the tone of your new group and get the conversation going with a post.
       </Text>
