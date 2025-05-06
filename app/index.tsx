@@ -15,7 +15,7 @@ export default function FirstPage() {
         By clicking Agree & Join or Continue,you agree to the Collabify User Agreement, Privacy Policy, and Cookie Policy
       </Text>
       
-      <TouchableOpacity style={styles.button1} onPress={() => router.push('/home')}>
+      <TouchableOpacity style={styles.button1} onPress={() => router.push('/signup')}>
         <Text style={styles.buttonText1}>Agree & Join</Text>
       </TouchableOpacity>
       

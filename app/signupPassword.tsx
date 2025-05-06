@@ -49,7 +49,7 @@ export default function SignupPassword() {
 
       if (response.ok) {
         Alert.alert('Success', 'Account created successfully!');
-        router.push('/home');
+        router.push('/signin');
       } else {
         Alert.alert('Error', data.message || 'Signup failed');
       }

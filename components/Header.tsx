@@ -16,7 +16,7 @@ const Header = () => {
         if (userData) {
           const parsedUser = JSON.parse(userData);
           setUser(parsedUser);
-          console.log(parsedUser.name);       // ➔ "Adeel Ahmed"
+          console.log(parsedUser.name);  
           console.log(parsedUser.token);      // ➔ JWT token
           console.log(parsedUser.profilePic); // ➔ Profile pic filename
         }
