@@ -10,19 +10,6 @@ import ChangeCoverPhotoModal from './groupcreation/Modal/ChnageCoverPhotoModal';
 import PostLoadingSkeleton from '@/components/PostLoadingSkeleton';
 import ProfileLoadingSkeleton from '@/components/ProfileLoadingSkeleton';
 
-interface PostData {
-  _id: string;
-  caption: string;
-  images: string[];
-  createdAt: string;
-  likes:string[];
-  shares:string[];
-  comments:string[];
-  userId: {
-    _id: string;
-    email: string;
-  };
-}
 
 const MyProfile: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -58,51 +45,68 @@ const MyProfile: React.FC = () => {
     fetchUserData();
   }, []);
   
-  // 👉 Now, watch `user` and fetch posts after user is ready
-  useEffect(() => {
-    const fetchPosts = async () => {
-      if (!user) return;
-  
-      try {
-        const response = await fetch(`${API_URL}/api/posts/user/${user._id}`);
-        const result = await response.json();
-  
-        if (!response.ok) {
-          console.error('Failed to fetch posts:', result?.message || 'Unknown error');
-          return;
+const fetchPosts = async () => {
+  if (!user || !user._id) return;
+
+  try {
+    const response = await fetch(`${API_URL}/api/posts/user/${user._id}`);
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('Failed to fetch posts:', result?.message || 'Unknown error');
+      return;
+    }
+
+    const postsArray = result.data;
+
+    if (!Array.isArray(postsArray)) {
+      console.error('Posts data is not an array:', postsArray);
+      return;
+    }
+
+    const postsWithUserData = await Promise.all(
+      postsArray.map(async (post) => {
+        try {
+          const userResponse = await fetch(`${API_URL}/api/users/${post.userId._id}`);
+          const userData = await userResponse.json();
+
+          const isLiked = post.likes?.includes(user._id); // ✅ check if current user liked
+
+          return {
+            ...post,
+            profileName: `${userData.firstName} ${userData.lastName}`,
+            profileImage: userData.profilePic
+              ? { uri: `${API_URL}/uploads/${userData.profilePic}` }
+              : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' },
+            postImages: post.images.map((img: any) => ({ uri: `${API_URL}/uploads/postImages/${img}` })),
+            postDate: formatPostDate(post.createdAt),
+            likeCount: post.likes?.length || 0,
+            commentCount: post.comments?.length || 0,
+            shareCount: post.shares?.length || 0,
+            postId: post._id,
+            isLikedByUser: isLiked, // ✅ highlight in UI if liked
+          };
+        } catch (err) {
+          console.error(`Error fetching user data for post ${post._id}:`, err);
+          return null;
         }
-  
-        const postsArray = result.data; // 👈 correctly extract array
-  
-        if (!Array.isArray(postsArray)) {
-          console.error('Posts data is not an array:', postsArray);
-          return;
-        }
-  
-        const postsWithUserData = postsArray.map((post) => ({
-          ...post,
-          profileName: `${user.firstName} ${user.lastName}`,
-          profileImage: user.profilePic
-            ? { uri: `${API_URL}/uploads/${user.profilePic}` }
-            : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' },
-          postImages: post.images.map(img => ({ uri: `${API_URL}/uploads/postImages/${img}` })),
-          postDate: formatPostDate(post.createdAt),
-          likeCount: post.likes ? post.likes.length : 0,
-          commentCount: post.comments ? post.comments.length : 0,
-          shareCount: post.shares ? post.shares.length : 0,
-        }));
-  
-        setPosts(postsWithUserData);
-      } catch (error) {
-        console.error('Failed to fetch posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
+      })
+    );
+
+    setPosts(postsWithUserData.filter(Boolean)); // filter out failed ones
+  } catch (error) {
+    console.error('Failed to fetch posts:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  if (user && user._id) {
     fetchPosts();
-  }, [user]);  
-  
+  }
+}, [user]);
+
 
     const formatPostDate = (dateString: string) => {
       const postDate = new Date(dateString);
@@ -139,8 +143,29 @@ const MyProfile: React.FC = () => {
   : { uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Image_not_available.png/640px-Image_not_available.png' };
 
     
-    const handleLike = () => {
-      console.log('Liked!');
+      const handleLike = async (postId: string) => {
+      if (!user || !user._id) {
+        console.error('User not logged in');
+        return;
+      }
+    
+      try {
+        const response = await fetch(`${API_URL}/api/posts/${postId}/like`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user._id }),
+        });
+    
+        const result = await response.json();
+        console.log(result.message); // 'Post liked' or 'Post unliked'
+    
+        // Optionally re-fetch posts to update the UI
+        fetchPosts();
+      } catch (error) {
+        console.error('Failed to toggle like:', error);
+      }
     };
   
     const handleComment = () => {
@@ -238,13 +263,15 @@ const MyProfile: React.FC = () => {
               profileImage={post.profileImage}
               profileName={post.profileName}
               postImages={post.postImages}
+              postId={post._id}
               postText={post.caption}
               postDate={post.postDate}
-              onLike={handleLike}
+              onLike={() => handleLike(post._id)} 
               onComment={handleComment}
               onSend={handleSend}
               likesCount={post.likeCount}
               commentsCount={post.commentCount}
+              isLiked={post.isLikedByUser}
               sharesCount={post.shareCount}
             />
           ))}

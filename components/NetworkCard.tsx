@@ -32,8 +32,8 @@ const NetworkCard: React.FC<NetworkCardProps> = ({
 </Text>
 
       <View style={styles.mutualConnectionsContainer}>
-        <Image source={require('../assets/images/Profile-Picture1.jpg')} style={styles.smallProfileImage} />
-        <Text style={styles.mutualConnectionsText}>{mutualConnections}</Text>
+        {/* <Image source={require('../assets/images/Profile-Picture1.jpg')} style={styles.smallProfileImage} />
+        <Text style={styles.mutualConnectionsText}>{mutualConnections}</Text> */}
       </View>
       <TouchableOpacity style={styles.connectButton} onPress={onConnect}>
         <Text style={styles.connectButtonText}>Join</Text>

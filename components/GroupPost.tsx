@@ -1,19 +1,21 @@
 // Post.tsx
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface PostProps {
   profileImage: any;
   profileName: string;
-  postImages: any[];  // ➡️ changed from single postImage to multiple
+  postImages: any[];
   postText: string;
   postDate: string;
-  onLike: () => void;
+  postId: string;
+  onLike: (postId: string) => void;
   onComment: () => void;
   onSend: () => void;
   likesCount: number;
+  isLiked: boolean;
   commentsCount: number;
   sharesCount: number;
 }
@@ -24,8 +26,10 @@ const Post: React.FC<PostProps> = ({
   profileImage,
   profileName,
   postImages,
+  isLiked,
   postText,
   postDate,
+  postId,
   onLike,
   onComment,
   onSend,
@@ -34,9 +38,15 @@ const Post: React.FC<PostProps> = ({
   sharesCount,
 }) => {
   const [showFullText, setShowFullText] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
 
   const toggleText = () => {
     setShowFullText(!showFullText);
+  };
+  const handleLikePress = async () => {
+    setLikeLoading(true);
+    await onLike(postId);
+    setLikeLoading(false);
   };
 
   const renderImages = () => {
@@ -113,9 +123,15 @@ const Post: React.FC<PostProps> = ({
 {postImages.length > 0 && renderImages()}
 <View style={styles.separator} />
             <View style={styles.iconsContainer}>
-              <TouchableOpacity onPress={onLike} style={styles.iconButton}>
-                <FontAwesome name="thumbs-up" size={21} color="grey" />
-                <Text style={styles.iconLabel}>Like ({likesCount})</Text>
+              <TouchableOpacity onPress={handleLikePress} style={styles.iconButton} disabled={likeLoading}>
+                {likeLoading ? (
+                  <ActivityIndicator size="small" color="grey" />
+                ) : (
+                  <>
+                    <FontAwesome name="thumbs-up" size={21} color={isLiked ? '#FF8B04' : 'grey'} />
+                    <Text style={styles.iconLabel}>Like ({likesCount})</Text>
+                  </>
+                )}
               </TouchableOpacity>
       
               <TouchableOpacity onPress={onComment} style={styles.iconButton}>

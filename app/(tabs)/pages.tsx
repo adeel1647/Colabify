@@ -22,6 +22,8 @@ export default function JobScreen() {
   const [activeTab, setActiveTab] = useState('Your Pages'); // Track selected tab
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [suggestedGroups, setSuggestedGroups] = useState<UserGroup[]>([]);
+
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -38,6 +40,31 @@ export default function JobScreen() {
   
     fetchUserData();
   }, []);
+  useEffect(() => {
+    const fetchSuggestedGroups = async () => {
+      if (activeTab === 'Your Pages') return; // Only fetch suggested if NOT 'Your Pages'
+
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/api/pages/`);
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.pages)) {
+          setSuggestedGroups(data.pages);
+        } else {
+          setSuggestedGroups([]);
+        }
+      } catch (error) {
+        console.error('Error fetching suggested groups:', error);
+        setSuggestedGroups([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSuggestedGroups();
+  }, [activeTab]);
+
   
   
   useEffect(() => {
@@ -79,58 +106,7 @@ export default function JobScreen() {
   const yourGroups = [
        { pageImage: require('../../assets/images/favicon.png'), pageName: 'Collabify', description: 'RootCode Lab', pageDescription: 'Job description for company four' },
   ];
-  const networkCards = [
-    {
-      backgroundImage: require('../../assets/images/Background-Image1.jpg'),
-      profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-      profileName: 'Alice Johnson',
-      position: 'Data Scientist at Tech Corp',
-      mutualConnections: 'John and 46 other mutual connections',
-    },
-    {
-      backgroundImage: require('../../assets/images/Background-Image2.jpg'),
-      profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-      profileName: 'Bob Williams',
-      position: 'UX Designer at Creative Ltd',
-      mutualConnections: 'Sarah and 30 other mutual connections',
-    },
-    {
-      backgroundImage: require('../../assets/images/Background-Image1.jpg'),
-      profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-      profileName: 'Alice Johnson',
-      position: 'Data Scientist at Tech Corp',
-      mutualConnections: 'John and 46 other mutual connections',
-    },
-    {
-      backgroundImage: require('../../assets/images/Background-Image2.jpg'),
-      profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-      profileName: 'Bob Williams',
-      position: 'UX Designer at Creative Ltd',
-      mutualConnections: 'Sarah and 30 other mutual connections',
-    },
-    {
-      backgroundImage: require('../../assets/images/Background-Image1.jpg'),
-      profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-      profileName: 'Alice Johnson',
-      position: 'Data Scientist at Tech Corp',
-      mutualConnections: 'John and 46 other mutual connections',
-    },
-    {
-      backgroundImage: require('../../assets/images/Background-Image2.jpg'),
-      profileImage: require('../../assets/images/Profile-Picture2.jpg'),
-      profileName: 'Bob Williams',
-      position: 'UX Designer at Creative Ltd',
-      mutualConnections: 'Sarah and 30 other mutual connections',
-    },
-    {
-      backgroundImage: require('../../assets/images/Background-Image1.jpg'),
-      profileImage: require('../../assets/images/Profile-Picture1.jpg'),
-      profileName: 'Alice Johnson',
-      position: 'Data Scientist at Tech Corp',
-      mutualConnections: 'John and 46 other mutual connections',
-    },
-    // Add more cards as needed...
-  ];
+
   const handleConnect = () => {
     console.log('Connect button pressed!');
   };
@@ -228,17 +204,17 @@ export default function JobScreen() {
     <View style={styles.networkCardsContainer}>
     <Text style={styles.networkCardsTitle}>Suggested for you</Text>
     <View style={styles.networkCardsRow}>
-      {networkCards.map((card, index) => (
-        <NetworkCard
-          key={index}
-          backgroundImage={card.backgroundImage}
-          profileImage={card.profileImage}
-          profileName={card.profileName}
-          position={card.position}
-          mutualConnections={card.mutualConnections}
-          onConnect={handleConnect}
-        />
-      ))}
+      {suggestedGroups.map((card, index) => (
+          <NetworkCard
+            key={card._id || index}
+            backgroundImage={{ uri: `${API_URL}/uploads/groupProfilePics/${card.groupProfilePic}` }}
+            profileImage={card.profileImage}
+            profileName={card.name}
+            position={card.description}
+            mutualConnections={card.mutualConnections}
+            onConnect={() => console.log('Connect pressed', card)}
+          />
+        ))}
     </View>
   </View>
   )}
