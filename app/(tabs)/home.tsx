@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator, Share } from 'react-native';
 import Post from '../../components/Post';
 import Header from '../../components/Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +19,14 @@ interface PostData {
     email: string;
   };
 }
+type Comment = {
+  commentId: string;
+  text: string;
+  userId: string;
+  userName: string;
+  userProfileImage: { uri: string };
+  createdAt: string;
+};
 
 interface UserData {
   _id: string;
@@ -99,6 +107,17 @@ const fetchPosts = async () => {
           shareCount: post.shares?.length || 0,
           postId: post._id,
           isLikedByUser: isLiked,
+
+          comments: post.comments.map(comment => ({
+        commentId: comment._id,
+        text: comment.text,
+        userId: comment.userId._id,
+        userName: `${comment.userId.firstName} ${comment.userId.lastName}`,
+        userProfileImage: comment.userId.profilePic
+          ? { uri: `${API_URL}/uploads/${comment.userId.profilePic}` }
+          : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' },
+        createdAt: comment.createdAt,
+      })),
         };
       })
     );
@@ -150,9 +169,27 @@ useEffect(() => {
     console.log('Commented!');
   };
   
-  const handleSend = () => {
-    console.log('Sent!');
-  };
+  const handleSend = async (postText: string) => {
+  try {
+    const result = await Share.share({
+      message: postText + '\n\nCheck this out!',
+      // You can also add a url field if you have a link to share
+      // url: 'https://example.com/post/123',
+    });
+
+    if (result.action === Share.sharedAction) {
+      if (result.activityType) {
+        console.log('Shared with activity type:', result.activityType);
+      } else {
+        console.log('Shared successfully');
+      }
+    } else if (result.action === Share.dismissedAction) {
+      console.log('Share dismissed');
+    }
+  } catch (error) {
+    console.error('Error sharing:');
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -177,6 +214,7 @@ useEffect(() => {
               onLike={() => handleLike(post._id)} 
               onComment={handleComment}
               onSend={handleSend}
+              comments={post.comments}
               likesCount={post.likeCount}
               commentsCount={post.commentCount}
               sharesCount={post.shareCount}

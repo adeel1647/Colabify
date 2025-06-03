@@ -57,29 +57,6 @@ export default function Signin() {
           <Text style={styles.thirdtopic} onPress={() => router.push('/signup')}>  Join Collabify</Text>
         </View>
 
-        <View>
-          <TouchableOpacity style={styles.button9}>
-            <Image source={require('../assets/images/google-48.png')} style={styles.icon} />
-            <Text style={styles.buttonText9}>Sign in with Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button9}>
-            <Image source={require('../assets/images/apple-logo-50.png')} style={styles.icon} />
-            <Text style={styles.buttonText9}>Sign in with Apple</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button9}>
-            <Image source={require('../assets/images/facebook-48.png')} style={styles.icon} />
-            <Text style={styles.buttonText9}>Sign in with Facebook</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.separatorContainer}>
-          <View style={styles.separatorLine}></View>
-          <Text style={styles.separatorText}>or</Text>
-          <View style={styles.separatorLine}></View>
-        </View>
-
         <View style={styles.bottomContainer}></View>
 
         <View style={styles.inputContainer}>
@@ -124,6 +101,11 @@ export default function Signin() {
             <Text style={styles.checkboxLabel2}>Learn more</Text>
           </View>
         </View>
+        <View style={styles.forgetPasswordContainer}>
+  <TouchableOpacity onPress={() => router.push('/forget-password')}>
+    <Text style={styles.forgetPasswordText}>Forget Password?</Text>
+  </TouchableOpacity>
+</View>
 
         <TouchableOpacity 
   style={[styles.button, isLoading && { opacity: 0.6 }]} 
@@ -168,7 +150,7 @@ const styles = StyleSheet.create({
     color: '#777',
   },
   bottomContainer: {
-    marginTop: 60,
+    marginTop: 40,
   },
   header: {
     flexDirection: 'row',
@@ -209,23 +191,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ccc',
     borderBottomWidth: 1,
   },
-  button9: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    borderWidth: 0.5,
-    borderColor: '#050505',
-    marginBottom: 10,
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText9: {
-    color: '#050505',
-    fontSize: 17.5,
-  },
   inputContainer: {
     marginBottom: 15,
   },
@@ -263,4 +228,14 @@ const styles = StyleSheet.create({
     marginLeft: 9.5,
     color: '#FF8B04',
   },
+  forgetPasswordContainer: {
+  alignItems: 'flex-end',
+  marginVertical: 10,
+},
+forgetPasswordText: {
+  color: '#FF8B04',
+  fontWeight: '600',
+  fontSize: 14,
+},
+
 });

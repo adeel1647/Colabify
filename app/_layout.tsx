@@ -17,6 +17,7 @@ export default function RootLayout() {
           <Stack.Screen name="myProfile" options={{ headerShown: false }} />
           <Stack.Screen name="groupcreation" options={{ headerShown: false }} />
           <Stack.Screen name="invitations" options={{ headerShown: false }} />
+          <Stack.Screen name="forget-password" options={{ headerShown: false }} />
         </Stack>
       </SafeAreaView>
     </GestureHandlerRootView>

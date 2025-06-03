@@ -19,7 +19,7 @@ export default function FirstPage() {
         <Text style={styles.buttonText1}>Agree & Join</Text>
       </TouchableOpacity>
       
-      <TouchableOpacity style={styles.button}>
+      {/* <TouchableOpacity style={styles.button}>
       <Image source={require('../assets/images/google-48.png')} style={styles.icon} />
         <Text style={styles.buttonText}>Continue with Google</Text>
       </TouchableOpacity>
@@ -28,7 +28,7 @@ export default function FirstPage() {
       <Image source={require('../assets/images/facebook-48.png')} style={styles.icon} />
         <Text style={styles.buttonText}>Continue with Facebook</Text>
       </TouchableOpacity>
-      
+       */}
       <Text style={styles.signInText} onPress={() => router.push('/signin')}>Sign in</Text>
       </View>
 

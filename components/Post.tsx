@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions, FlatList, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, Modal, View, Image, TouchableOpacity, Dimensions, FlatList, ActivityIndicator, TextInput, ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/config';
 
 interface PostProps {
   profileImage: any;
@@ -10,13 +12,23 @@ interface PostProps {
   postDate: string;
   onLike: (postId: string) => void;
   onComment: () => void;
-  onSend: () => void;
+  onSend: (postText: string) => void;
   likesCount: number;
   commentsCount: number;
   postId: string;
   isLiked: boolean;
+  comments: Comment[];
   sharesCount: number;
 }
+type Comment = {
+  commentId: string;
+  text: string;
+  userId: string;
+  userName: string;
+  userProfileImage: { uri: string };
+  createdAt: string;
+};
+
 
 const { width } = Dimensions.get('window');
 
@@ -34,9 +46,27 @@ const Post: React.FC<PostProps> = ({
   likesCount,
   commentsCount,
   sharesCount,
+  comments: commentsProp,
 }) => {
   const [showFullText, setShowFullText] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          console.log(parsedUser._id);  
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleLikePress = async () => {
     setLikeLoading(true);
@@ -48,6 +78,49 @@ const Post: React.FC<PostProps> = ({
   const toggleText = () => {
     setShowFullText(!showFullText);
   };
+  const [modalVisible, setModalVisible] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [sendingComment, setSendingComment] = useState(false);
+const [comments, setComments] = useState<Comment[]>([]);
+
+  useEffect(() => {
+    setComments(commentsProp || []);
+  }, [commentsProp]);
+  const sendComment = async () => {
+  if (!commentText.trim()) return;
+
+  try {
+    const response = await fetch(`${API_URL}/api/posts/${postId}/comment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Add auth token here if needed
+      },
+      body: JSON.stringify({
+        userId: user._id,
+        text: commentText.trim(),
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Assuming post.comments is updated on backend and returned in `data.post.comments`
+      setComments(data.post.comments.map((c: any) => c.text)); // extract texts only for display
+      setCommentText('');
+    } else {
+      alert(data.message || 'Failed to add comment');
+    }
+  } catch (error) {
+    console.error('Error posting comment:', error);
+    alert('Error posting comment');
+  }
+  finally {
+    setSendingComment(false);
+  }
+};
+
+
 
   const renderImages = () => {
     const imagesToShow = postImages.slice(0, 4);
@@ -141,15 +214,88 @@ const Post: React.FC<PostProps> = ({
     </>
   )}
 </TouchableOpacity>
-        <TouchableOpacity onPress={onComment} style={styles.iconButton}>
-          <FontAwesome name="comment" size={21} color="grey" />
-          <Text style={styles.iconLabel}>Comment ({commentsCount})</Text>
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.iconButton}>
+  <FontAwesome name="comment" size={21} color="grey" />
+  <Text style={styles.iconLabel}>Comment ({commentsCount})</Text>
+</TouchableOpacity>
+
 
         <TouchableOpacity onPress={onSend} style={styles.iconButton}>
           <FontAwesome name="send" size={21} color="grey" />
-          <Text style={styles.iconLabel}>Share ({sharesCount})</Text>
+          <Text style={styles.iconLabel}>Share </Text>
         </TouchableOpacity>
+
+<Modal
+  visible={modalVisible}
+  animationType="slide"
+  transparent={true}
+  onRequestClose={() => setModalVisible(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <ScrollView>
+        {/* Post header inside modal */}
+        <View style={styles.header}>
+          <Image source={profileImage} style={styles.profileImage} />
+          <View style={styles.headerText}>
+            <Text style={styles.profileName}>{profileName}</Text>
+            <Text style={styles.postDate}>{postDate}</Text>
+          </View>
+          <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+            <Text style={{ fontSize: 18 }}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Post text */}
+        <Text style={styles.postText}>{postText}</Text>
+
+        {/* Post images */}
+        {postImages.length > 0 && renderImages()}
+
+        {/* Comments section */}
+     <View style={{ marginTop: 15 }}>
+  <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>Comments:</Text>
+ {commentsProp.map(comment => (
+  <View key={comment.commentId} style={styles.commentContainer}>
+    <Image source={comment.userProfileImage} style={{ width: 24, height: 24, borderRadius: 12, marginRight: 10 }} />
+    <View>
+      <Text style={{ fontWeight: 'bold' }}>{comment.userName}</Text>
+      <Text>{comment.text}</Text>
+    </View>
+  </View>
+))}
+
+</View>
+
+
+      </ScrollView>
+
+      {/* Add comment input */}
+      <View style={styles.commentInputContainer}>
+        <TextInput
+          placeholder="Write a comment..."
+          value={commentText}
+          onChangeText={setCommentText}
+          style={styles.commentInput}
+        />
+      <TouchableOpacity
+  onPress={sendComment}
+  style={styles.sendCommentButton}
+  disabled={sendingComment}
+>
+  {sendingComment ? (
+    <ActivityIndicator size="small" color="#fff" />
+  ) : (
+    <Text style={{ color: 'white', fontWeight: 'bold' }}>Send</Text>
+  )}
+</TouchableOpacity>
+
+
+      </View>
+    </View>
+  </View>
+</Modal>
+
       </View>
     </View>
   );
@@ -276,6 +422,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    maxHeight: '80%',
+    padding: 15,
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+  },
+  commentInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    paddingTop: 10,
+  },
+  commentInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+  },
+  sendCommentButton: {
+    backgroundColor: '#FF8B04',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginLeft: 10,
+  },
+  commentText: {
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  commentContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 8,
+},
+
 });
 
 export default Post;
