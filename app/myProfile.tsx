@@ -9,14 +9,15 @@ import ChnageProfilePhotoModal from './groupcreation/Modal/ChnageProfilePhotoMod
 import ChangeCoverPhotoModal from './groupcreation/Modal/ChnageCoverPhotoModal';
 import PostLoadingSkeleton from '@/components/PostLoadingSkeleton';
 import ProfileLoadingSkeleton from '@/components/ProfileLoadingSkeleton';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 
 const MyProfile: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<any[]>([]);
-
   const router = useRouter();
+  const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
   
@@ -74,9 +75,9 @@ const fetchPosts = async () => {
 
           return {
             ...post,
-            profileName: `${userData.firstName} ${userData.lastName}`,
-            profileImage: userData.profilePic
-              ? { uri: `${API_URL}/uploads/${userData.profilePic}` }
+            profileName: `${user.firstName} ${user.lastName}`,
+            profileImage: user.profilePic
+              ? { uri: `${API_URL}/uploads/${user.profilePic}` }
               : { uri: 'https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Photo.png' },
             postImages: post.images.map((img: any) => ({ uri: `${API_URL}/uploads/postImages/${img}` })),
             postDate: formatPostDate(post.createdAt),
@@ -175,6 +176,10 @@ useEffect(() => {
     const handleSend = () => {
       console.log('Sent!');
     };
+    const handleBoost = (postId: string) => {
+  navigation.navigate('BoostDetailsScreen', { postId });
+};
+
     const formatConnections = (connections: any) => {
       if (connections === 0) {
         return '0 connections';
@@ -273,6 +278,7 @@ useEffect(() => {
               commentsCount={post.commentCount}
               isLiked={post.isLikedByUser}
               sharesCount={post.shareCount}
+              onBoost={handleBoost}
             />
           ))}
     </View>

@@ -1,8 +1,9 @@
 // Post.tsx
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
 
 interface PostProps {
   profileImage: any;
@@ -14,6 +15,7 @@ interface PostProps {
   onLike: (postId: string) => void;
   onComment: () => void;
   onSend: () => void;
+  onBoost: (postId: string) => void;
   likesCount: number;
   isLiked: boolean;
   commentsCount: number;
@@ -33,12 +35,14 @@ const Post: React.FC<PostProps> = ({
   onLike,
   onComment,
   onSend,
+  onBoost,
   likesCount,
   commentsCount,
   sharesCount,
 }) => {
   const [showFullText, setShowFullText] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
+  const navigation = useNavigation();
 
   const toggleText = () => {
     setShowFullText(!showFullText);
@@ -100,12 +104,26 @@ const Post: React.FC<PostProps> = ({
   return (
     <View style={styles.postContainer}>
       <View style={styles.header}>
-        <Image source={profileImage} style={styles.profileImage} />
-        <View style={styles.headerText}>
-          <Text style={styles.profileName}>{profileName}</Text>
-          <Text style={styles.postDate}>{postDate}</Text>
-        </View> 
-      </View>
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Image source={profileImage} style={styles.profileImage} />
+    <View style={styles.headerText}>
+      <Text style={styles.profileName}>{profileName}</Text>
+      <Text style={styles.postDate}>{postDate}</Text>
+    </View>
+  </View>
+
+ <TouchableOpacity
+  style={styles.boostButton}
+  onPress={() => onBoost(postId)}
+>
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <FontAwesome5 name="rocket" size={14} color="white" style={{ marginRight: 6 }} />
+    <Text style={styles.boostButtonText}>Boost</Text>
+  </View>
+</TouchableOpacity>
+
+</View>
+
       <Text
         style={styles.postText}
         numberOfLines={showFullText ? undefined : 4}
@@ -163,7 +181,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+  justifyContent: 'space-between',
+  alignItems: 'center',
     marginBottom: 10,
   },
   profileImage: {
@@ -173,7 +192,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   headerText: {
-    flex: 1,
+    justifyContent: 'center',
   },
   profileName: {
     fontSize: 15,
@@ -269,6 +288,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  boostButton: {
+  backgroundColor: '#FF8B04',
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  borderRadius: 16,
+},
+
+boostButtonText: {
+  color: 'white',
+  fontWeight: 'bold',
+  fontSize: 15,
+},
 });
 
 export default Post;

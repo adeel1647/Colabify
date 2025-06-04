@@ -88,13 +88,14 @@ const [comments, setComments] = useState<Comment[]>([]);
   }, [commentsProp]);
   const sendComment = async () => {
   if (!commentText.trim()) return;
+  setSendingComment(true);
 
   try {
     const response = await fetch(`${API_URL}/api/posts/${postId}/comment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // Add auth token here if needed
+        // Include auth token if required
       },
       body: JSON.stringify({
         userId: user._id,
@@ -105,8 +106,15 @@ const [comments, setComments] = useState<Comment[]>([]);
     const data = await response.json();
 
     if (response.ok) {
-      // Assuming post.comments is updated on backend and returned in `data.post.comments`
-      setComments(data.post.comments.map((c: any) => c.text)); // extract texts only for display
+      // Assuming data.newComment is returned with full comment details
+      const newComment = data.newComment || {
+        commentId: Date.now().toString(), // fallback id
+        userProfileImage: user.profileImage,
+        userName: user.name,
+        text: commentText.trim(),
+      };
+
+      setComments(prevComments => [newComment, ...prevComments]); // Show at top instantly
       setCommentText('');
     } else {
       alert(data.message || 'Failed to add comment');
@@ -114,11 +122,11 @@ const [comments, setComments] = useState<Comment[]>([]);
   } catch (error) {
     console.error('Error posting comment:', error);
     alert('Error posting comment');
-  }
-  finally {
+  } finally {
     setSendingComment(false);
   }
 };
+
 
 
 
@@ -255,7 +263,7 @@ const [comments, setComments] = useState<Comment[]>([]);
         {/* Comments section */}
      <View style={{ marginTop: 15 }}>
   <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>Comments:</Text>
- {commentsProp.map(comment => (
+{comments.map(comment => (
   <View key={comment.commentId} style={styles.commentContainer}>
     <Image source={comment.userProfileImage} style={{ width: 24, height: 24, borderRadius: 12, marginRight: 10 }} />
     <View>
